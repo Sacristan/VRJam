@@ -16,6 +16,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "Move",
+                    "type": "Button",
+                    "id": "af39a424-acb9-452d-b3e9-3865099d43af",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "AdjustHeight",
                     "type": "Value",
                     "id": "76766f1a-aea5-41a8-bab7-76c1177be81a",
@@ -58,6 +67,17 @@
                     "action": "Look",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "9bf738df-ecbf-4f34-9cb8-219003ea10c0",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 },
                 {
                     "name": "1D Axis",

@@ -5,7 +5,10 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 
 public class XRITEmulateMovement : MonoBehaviour
 {
-    private float upDownMoveSpeed = 10f;
+    [SerializeField] private float movementSpeed = 2f;
+    [SerializeField] private float upDownMoveSpeed = 0.1f;
+
+    [SerializeField] private InputActionReference movementAction;
     [SerializeField] private InputActionReference upDownAction;
 
     private ContinuousMoveProvider _moveProvider;
@@ -19,12 +22,18 @@ public class XRITEmulateMovement : MonoBehaviour
         InitMoveTransform();
         InitMoveProvider();
 
+        movementAction.action.performed += ActivateMovement;
+        movementAction.action.canceled += DeactivateMovement;
+
         upDownAction.action.performed += StartVerticalMovement;
         upDownAction.action.canceled += StopVerticalMovement;
     }
 
     private void OnDisable()
     {
+        movementAction.action.performed -= ActivateMovement;
+        movementAction.action.canceled -= DeactivateMovement;
+
         upDownAction.action.performed -= StartVerticalMovement;
         upDownAction.action.canceled -= StopVerticalMovement;
     }
@@ -39,6 +48,16 @@ public class XRITEmulateMovement : MonoBehaviour
     {
         _moveProvider = FindAnyObjectByType<ContinuousMoveProvider>(FindObjectsInactive.Include);
         _defaultMoveSpeed = _moveProvider.moveSpeed;
+    }
+
+    private void ActivateMovement(InputAction.CallbackContext obj)
+    {
+        _moveProvider.moveSpeed = _defaultMoveSpeed * movementSpeed;
+    }
+
+    private void DeactivateMovement(InputAction.CallbackContext obj)
+    {
+        _moveProvider.moveSpeed = _defaultMoveSpeed;
     }
 
     private void StartVerticalMovement(InputAction.CallbackContext context)

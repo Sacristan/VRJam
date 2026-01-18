@@ -91,7 +91,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89b9c5100e904a74b81f43563a732bbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  runSpeedMultiplier: 2
   upDownMoveSpeed: 0.1
+  movementAction: {fileID: -7797210258581628846, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   upDownAction: {fileID: 1627893473731496198, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
 --- !u!1 &8629918244890682731
 GameObject:
