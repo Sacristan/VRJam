@@ -32,6 +32,8 @@ Transform:
   m_Children:
   - {fileID: 50382786214081904}
   - {fileID: 6414192440694348731}
+  - {fileID: 704957932992419759}
+  - {fileID: 8925360196082422049}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &-4103500047235089210
@@ -91,10 +93,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89b9c5100e904a74b81f43563a732bbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  runSpeedMultiplier: 2
+  movementSpeed: 2
   upDownMoveSpeed: 0.1
   movementAction: {fileID: -7797210258581628846, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   upDownAction: {fileID: 1627893473731496198, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+--- !u!1 &8199036211155551303
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8925360196082422049}
+  - component: {fileID: 8937160915700453563}
+  m_Layer: 0
+  m_Name: LeftController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8925360196082422049
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8199036211155551303}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4953489880005739420}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8937160915700453563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8199036211155551303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f6654b87d9e0b348b45f0fbb8ff5621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  side: 1
+  controllerPos: {x: 0.2, y: -0.15, z: 0.5}
+  controllerRot: {x: 0, y: -10, z: 0}
+  gripAction: {fileID: -2562146434381123301, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  triggerAction: {fileID: 5018205442526507666, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  toggleActiveGripAction: {fileID: 5489705730665594422, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  joystickAction: {fileID: 5988101811335388465, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
 --- !u!1 &8629918244890682731
 GameObject:
   m_ObjectHideFlags: 0
@@ -143,3 +196,54 @@ MonoBehaviour:
   verticalRotationMultiplier: 0.2
   captureCursor: 1
   lookAroundAction: {fileID: -2131461429977668216, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+--- !u!1 &8826156160521742048
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 704957932992419759}
+  - component: {fileID: 6127576142247463790}
+  m_Layer: 0
+  m_Name: RightController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &704957932992419759
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8826156160521742048}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4953489880005739420}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6127576142247463790
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8826156160521742048}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f6654b87d9e0b348b45f0fbb8ff5621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  side: 2
+  controllerPos: {x: -0.2, y: -0.15, z: 0.5}
+  controllerRot: {x: 0, y: -10, z: 0}
+  gripAction: {fileID: -7137760455930620919, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  triggerAction: {fileID: 7938380926253949292, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  toggleActiveGripAction: {fileID: 4274930675127651884, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  joystickAction: {fileID: 1806083278763548157, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
