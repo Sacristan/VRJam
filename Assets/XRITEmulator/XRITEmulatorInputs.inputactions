@@ -1,0 +1,99 @@
+{
+    "version": 1,
+    "name": "XRITEmulatorInputs",
+    "maps": [
+        {
+            "name": "HMD",
+            "id": "bc18d594-2eca-41d5-b790-64977978e4fb",
+            "actions": [
+                {
+                    "name": "Look",
+                    "type": "Value",
+                    "id": "555584b6-a210-4dbf-b124-dad054803133",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                },
+                {
+                    "name": "AdjustHeight",
+                    "type": "Value",
+                    "id": "76766f1a-aea5-41a8-bab7-76c1177be81a",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "Mouse",
+                    "id": "9d6231e6-0398-4ba3-8639-c142ad047781",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "b0bac54a-86d7-4b2a-80d6-602dc497e3b7",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "a896c9e0-c6da-42ea-b1a5-3bd92aaf1be6",
+                    "path": "<Mouse>/delta",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Look",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "1D Axis",
+                    "id": "0dc3b603-3c09-4464-a5f0-02ee395e5af4",
+                    "path": "1DAxis",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AdjustHeight",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "negative",
+                    "id": "77bf3470-e6c2-40d2-b752-7bfcf36280ae",
+                    "path": "<Keyboard>/q",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AdjustHeight",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "positive",
+                    "id": "fd7a5f30-84fd-487c-889d-7b1b183dc1fb",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "AdjustHeight",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
