@@ -9,7 +9,7 @@ Preset:
   m_Name: FingersController
   m_TargetType:
     m_NativeTypeID: 114
-    m_ManagedTypePPtr: {fileID: 11500000, guid: b837beed44cb4b8d8e8a9e38b88fbdb0, type: 3}
+    m_ManagedTypePPtr: {fileID: 11500000, guid: a51eca5779cfe9548996076513bc8a6e, type: 3}
     m_ManagedTypeFallback: 
   m_Properties:
   - target: {fileID: 0}

@@ -1,3 +1,4 @@
+using System;
 using BNG;
 using UnityEngine;
 
@@ -11,4 +12,10 @@ public class HandGraphics : MonoBehaviour
     public HandPoser HandPoser => handPoser;
     public HandPoseBlender PoseBlender => poseBlender;
     public AutoPoser AutoPoser => autoPoser;
+
+    private void OnValidate()
+    {
+        if(handPoser == null) handPoser = GetComponent<HandPoser>();
+        if(poseBlender == null) poseBlender = GetComponent<HandPoseBlender>();
+    }
 }
