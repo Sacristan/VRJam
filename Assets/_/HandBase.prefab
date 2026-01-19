@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 8018376628960218915}
   - component: {fileID: 7287751446189114108}
   - component: {fileID: 6455693850533161372}
+  - component: {fileID: 7570553901613699308}
   - component: {fileID: 6438278081455723655}
   - component: {fileID: 6365751486466240847}
   - component: {fileID: 6530879263329093061}
@@ -104,6 +105,19 @@ MonoBehaviour:
   RingValue: 0
   PinkyValue: 0
   GripValue: 0
+--- !u!114 &7570553901613699308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026789149856340975}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00726b2748ca00246b169b17881e5f0d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  alternativeHandViewParent: {fileID: 0}
 --- !u!114 &6438278081455723655
 MonoBehaviour:
   m_ObjectHideFlags: 0
