@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 559cbed62d60c36489d9584589ebc1ae, type: 3}
+  m_Name: Right Hand Inputs
+  m_EditorClassIdentifier: 
+  triggerInputButton: {fileID: 83097790271614945, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  triggerInputValue: {fileID: 7904272356298805229, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  gripInputButton: {fileID: 187161793506945269, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  gripInputValue: {fileID: -1758520528963094988, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  thumbTouch: {fileID: -6636325674931209879, guid: c348712bda248c246b8c49b3db54643f, type: 3}
+  primaryButton: {fileID: -5018821722783609213, guid: c348712bda248c246b8c49b3db54643f, type: 3}

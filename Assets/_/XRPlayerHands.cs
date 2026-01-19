@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -10,6 +11,11 @@ public class XRPlayerHands : MonoBehaviour
 
     public XRPlayerHand LeftHand => leftHand;
     public XRPlayerHand RightHand => rightHand;
+
+    private void Start()
+    {
+        Initialize();
+    }
 
     public void Initialize()
     {
