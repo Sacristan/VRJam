@@ -16,8 +16,8 @@ using CommonUsages = UnityEngine.InputSystem.CommonUsages;
 public class XRITEmulateController : MonoBehaviour
 {
     [SerializeField] private InteractorHandedness side = InteractorHandedness.Left;
-    [SerializeField] private Vector3 controllerPos = new(-0.2f, -0.15f, 0.5f); //invert x value for Right controller
-    [SerializeField] private Vector3 controllerRot = new(0f, -10f, 0f); //invert y value for Right controller
+    [SerializeField] private Vector3 controllerPos = new(-0.121f, -0.088f, 0.225f); //invert x value for Right controller
+    [SerializeField] private Vector3 controllerRot = new(0f, -0f, 0f); //invert y value for Right controller
 
     [Header("Inputs")] [SerializeField] private InputActionReference gripAction;
     [SerializeField] private InputActionReference triggerAction;

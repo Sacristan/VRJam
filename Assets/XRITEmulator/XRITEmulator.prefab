@@ -142,7 +142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   side: 1
-  controllerPos: {x: 0.2, y: -0.15, z: 0.5}
+  controllerPos: {x: -0.15, y: -0.15, z: 0.3}
   controllerRot: {x: 0, y: -10, z: 0}
   gripAction: {fileID: -2562146434381123301, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   triggerAction: {fileID: 5018205442526507666, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
@@ -241,8 +241,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   side: 2
-  controllerPos: {x: -0.2, y: -0.15, z: 0.5}
-  controllerRot: {x: 0, y: -10, z: 0}
+  controllerPos: {x: -0.15, y: -0.15, z: 0.3}
+  controllerRot: {x: 0, y: 10, z: 0}
   gripAction: {fileID: -7137760455930620919, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   triggerAction: {fileID: 7938380926253949292, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   toggleActiveGripAction: {fileID: 4274930675127651884, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
