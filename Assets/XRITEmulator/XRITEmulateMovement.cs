@@ -6,81 +6,115 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 public class XRITEmulateMovement : MonoBehaviour
 {
     [SerializeField] private float movementSpeed = 2f;
-    [SerializeField] private float upDownMoveSpeed = 0.1f;
-
+    [SerializeField] private float verticalMoveSpeed = 1f;
+    [SerializeField] private bool enableVerticalMovement = true;
     [SerializeField] private InputActionReference movementAction;
     [SerializeField] private InputActionReference upDownAction;
 
     private ContinuousMoveProvider _moveProvider;
-    private Transform _verticalMoveTransform;
+    private Transform _xrOriginTransform;
 
-    private bool _verticalMoveActive;
     private float _defaultMoveSpeed;
+    private bool _verticalMoveActive;
+    private bool _isInitialized;
 
     private void OnEnable()
     {
-        InitMoveTransform();
-        InitMoveProvider();
+        if (!_isInitialized)
+        {
+            InitializeComponents();
+            _isInitialized = true;
+        }
 
-        movementAction.action.performed += ActivateMovement;
-        movementAction.action.canceled += DeactivateMovement;
-
-        upDownAction.action.performed += StartVerticalMovement;
-        upDownAction.action.canceled += StopVerticalMovement;
+        SubscribeToInputs();
     }
 
     private void OnDisable()
     {
-        movementAction.action.performed -= ActivateMovement;
-        movementAction.action.canceled -= DeactivateMovement;
-
-        upDownAction.action.performed -= StartVerticalMovement;
-        upDownAction.action.canceled -= StopVerticalMovement;
+        UnsubscribeFromInputs();
     }
 
-    private void InitMoveTransform()
+    private void InitializeComponents()
     {
-        XROrigin xrOrigin = FindAnyObjectByType<XROrigin>();
-        _verticalMoveTransform = xrOrigin.CameraFloorOffsetObject.transform;
-    }
+        var xrOrigin = FindAnyObjectByType<XROrigin>();
+        if (xrOrigin != null)
+        {
+            _xrOriginTransform = xrOrigin.transform;
+        }
 
-    private void InitMoveProvider()
-    {
         _moveProvider = FindAnyObjectByType<ContinuousMoveProvider>(FindObjectsInactive.Include);
-        _defaultMoveSpeed = _moveProvider.moveSpeed;
+        if (_moveProvider != null)
+        {
+            _defaultMoveSpeed = _moveProvider.moveSpeed;
+        }
     }
 
-    private void ActivateMovement(InputAction.CallbackContext obj)
+    private void SubscribeToInputs()
     {
-        _moveProvider.moveSpeed = _defaultMoveSpeed * movementSpeed;
+        if (movementAction?.action != null)
+        {
+            movementAction.action.performed += OnMovementPerformed;
+            movementAction.action.canceled += OnMovementCanceled;
+        }
+
+        if (upDownAction?.action != null && enableVerticalMovement)
+        {
+            upDownAction.action.performed += OnVerticalMoveStarted;
+            upDownAction.action.canceled += OnVerticalMoveStopped;
+        }
     }
 
-    private void DeactivateMovement(InputAction.CallbackContext obj)
+    private void UnsubscribeFromInputs()
     {
-        _moveProvider.moveSpeed = _defaultMoveSpeed;
+        if (movementAction?.action != null)
+        {
+            movementAction.action.performed -= OnMovementPerformed;
+            movementAction.action.canceled -= OnMovementCanceled;
+        }
+
+        if (upDownAction?.action != null)
+        {
+            upDownAction.action.performed -= OnVerticalMoveStarted;
+            upDownAction.action.canceled -= OnVerticalMoveStopped;
+        }
     }
 
-    private void StartVerticalMovement(InputAction.CallbackContext context)
+    private void OnMovementPerformed(InputAction.CallbackContext ctx)
+    {
+        if (_moveProvider != null)
+            _moveProvider.moveSpeed = _defaultMoveSpeed * movementSpeed;
+    }
+
+    private void OnMovementCanceled(InputAction.CallbackContext ctx)
+    {
+        if (_moveProvider != null)
+            _moveProvider.moveSpeed = _defaultMoveSpeed;
+    }
+
+    private void OnVerticalMoveStarted(InputAction.CallbackContext ctx)
     {
         _verticalMoveActive = true;
     }
 
-    private void StopVerticalMovement(InputAction.CallbackContext context)
+    private void OnVerticalMoveStopped(InputAction.CallbackContext ctx)
     {
         _verticalMoveActive = false;
     }
 
     private void Update()
     {
-        if (_verticalMoveActive)
+        if (_verticalMoveActive && enableVerticalMovement)
         {
-            DoVerticalMovement();
+            ProcessVerticalMovement();
         }
     }
 
-    private void DoVerticalMovement()
+    private void ProcessVerticalMovement()
     {
-        float upDownInputValue = upDownAction.action.ReadValue<float>();
-        _verticalMoveTransform.Translate(Vector3.up * (upDownInputValue * Time.deltaTime), Space.World);
+        if (_xrOriginTransform == null || upDownAction?.action == null) return;
+
+        float inputValue = upDownAction.action.ReadValue<float>();
+        Vector3 movement = Vector3.up * (inputValue * verticalMoveSpeed * Time.deltaTime);
+        _xrOriginTransform.Translate(movement, Space.World);
     }
 }

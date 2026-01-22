@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.XR.Management;
 
@@ -28,7 +27,7 @@ public class XRITEmulatorInit : MonoBehaviour
         }
         else
         {
-            Debug.LogError("XRITEmulator prefab not found at specified path!");
+            Debug.LogError($"{nameof(XRITEmulator)} prefab not found at specified path!");
         }
     }
 #endif

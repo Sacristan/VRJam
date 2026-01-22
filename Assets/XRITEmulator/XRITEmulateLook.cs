@@ -6,89 +6,102 @@ public class XRITEmulateLook : MonoBehaviour
 {
     [SerializeField] private float horizontalRotationMultiplier = 0.2f;
     [SerializeField] private float verticalRotationMultiplier = 0.2f;
+    [SerializeField] private float maxVerticalAngle = 80f;
     [SerializeField] private bool captureCursor = true;
-
-    [Header("Inputs")] [SerializeField] private InputActionReference lookAroundAction;
+    [SerializeField] private bool invertVertical = false;
+    [SerializeField] private InputActionReference lookAroundAction;
 
     private XROrigin _xrOrigin;
-    private Transform BodyRotationTransform => _xrOrigin.transform;
-    private Transform CameraRotationTransform => _xrOrigin.CameraFloorOffsetObject.transform;
+    private Transform _bodyTransform;
+    private Transform _cameraTransform;
 
+    private float _currentVerticalRotation;
     private int _lastRotationFrame;
-
-    private bool _wasActive = false;
-
-    // private void Start()
-    // {
-    //     XRPlayerBase.Instance.Locomotion.AddProviderState(this);
-    // }
+    private bool _wasActive;
 
     private void OnEnable()
     {
-        InitXROrigin();
-        lookAroundAction.action.performed += DoRotation;
+        InitializeXROrigin();
+
+        if (lookAroundAction?.action != null)
+            lookAroundAction.action.performed += OnLookPerformed;
     }
 
     private void OnDisable()
     {
-        lookAroundAction.action.performed -= DoRotation;
+        if (lookAroundAction?.action != null)
+            lookAroundAction.action.performed -= OnLookPerformed;
 
         if (_wasActive)
         {
             _wasActive = false;
-            OnLookAroundStop();
+            ReleaseCursor();
         }
     }
 
-    private void InitXROrigin()
+    private void InitializeXROrigin()
     {
         _xrOrigin = FindAnyObjectByType<XROrigin>();
+        if (_xrOrigin != null)
+        {
+            _bodyTransform = _xrOrigin.transform;
+            _cameraTransform = _xrOrigin.CameraFloorOffsetObject.transform;
+            _currentVerticalRotation = _cameraTransform.localEulerAngles.x;
+
+            // Normalize to -180 to 180 range
+            if (_currentVerticalRotation > 180f)
+                _currentVerticalRotation -= 360f;
+        }
     }
 
-    private void DoRotation(InputAction.CallbackContext context)
+    private void OnLookPerformed(InputAction.CallbackContext ctx)
     {
-        Vector2 inputValue = context.ReadValue<Vector2>();
-        BodyRotationTransform.Rotate(Vector3.up, inputValue.x * horizontalRotationMultiplier);
-        CameraRotationTransform.Rotate(
-            Vector3.left * inputValue.y * verticalRotationMultiplier, Space.Self
+        if (_bodyTransform == null || _cameraTransform == null) return;
+
+        Vector2 input = ctx.ReadValue<Vector2>();
+
+        // Horizontal rotation (body)
+        _bodyTransform.Rotate(Vector3.up, input.x * horizontalRotationMultiplier, Space.World);
+
+        // Vertical rotation (camera) with clamping
+        float verticalDelta = input.y * verticalRotationMultiplier * (invertVertical ? 1f : -1f);
+
+        _currentVerticalRotation = Mathf.Clamp(
+            _currentVerticalRotation + verticalDelta,
+            -maxVerticalAngle,
+            maxVerticalAngle
         );
+
+        _cameraTransform.localRotation = Quaternion.Euler(_currentVerticalRotation, 0f, 0f);
         _lastRotationFrame = Time.frameCount;
     }
 
-    public bool IsActive()
-    {
-        //prolong active locomotion for 1 frame after the actual rotation
-        return Time.frameCount <= _lastRotationFrame + 1;
-    }
+    public bool IsActive() => Time.frameCount <= _lastRotationFrame + 1;
 
     private void LateUpdate()
     {
         bool isActive = IsActive();
-        bool wasActive = _wasActive;
-        _wasActive = isActive;
 
-        if (isActive != wasActive)
+        if (isActive != _wasActive)
         {
+            _wasActive = isActive;
+
             if (isActive)
-                OnLookAroundStart();
+                CaptureCursor();
             else
-                OnLookAroundStop();
+                ReleaseCursor();
         }
     }
 
-    private void OnLookAroundStart()
+    private void CaptureCursor()
     {
         if (captureCursor)
-        {
             Cursor.lockState = CursorLockMode.Locked;
-        }
     }
 
-    private void OnLookAroundStop()
+    private void ReleaseCursor()
     {
         if (captureCursor)
-        {
             Cursor.lockState = CursorLockMode.None;
-        }
     }
 }

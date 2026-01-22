@@ -49,6 +49,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputActionAsset: {fileID: -944628639613478452, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  config: {fileID: 11400000, guid: 084930258339d7f458c3240209a9884c, type: 2}
 --- !u!1 &7509733232837643998
 GameObject:
   m_ObjectHideFlags: 0
@@ -94,7 +95,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   movementSpeed: 2
-  upDownMoveSpeed: 0.1
+  verticalMoveSpeed: 1
+  enableVerticalMovement: 1
   movementAction: {fileID: -7797210258581628846, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   upDownAction: {fileID: 1627893473731496198, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
 --- !u!1 &8199036211155551303
@@ -142,12 +144,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   side: 1
-  controllerPos: {x: -0.15, y: -0.15, z: 0.3}
-  controllerRot: {x: 0, y: -10, z: 0}
   gripAction: {fileID: -2562146434381123301, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   triggerAction: {fileID: 5018205442526507666, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   toggleActiveGripAction: {fileID: 5489705730665594422, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   joystickAction: {fileID: 5988101811335388465, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  primaryButtonAction: {fileID: 0}
+  secondaryButtonAction: {fileID: 0}
 --- !u!1 &8629918244890682731
 GameObject:
   m_ObjectHideFlags: 0
@@ -194,7 +196,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   horizontalRotationMultiplier: 0.2
   verticalRotationMultiplier: 0.2
+  maxVerticalAngle: 80
   captureCursor: 1
+  invertVertical: 0
   lookAroundAction: {fileID: -2131461429977668216, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
 --- !u!1 &8826156160521742048
 GameObject:
@@ -241,9 +245,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   side: 2
-  controllerPos: {x: -0.15, y: -0.15, z: 0.3}
-  controllerRot: {x: 0, y: 10, z: 0}
   gripAction: {fileID: -7137760455930620919, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   triggerAction: {fileID: 7938380926253949292, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   toggleActiveGripAction: {fileID: 4274930675127651884, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
   joystickAction: {fileID: 1806083278763548157, guid: 4b3bb47e77bd7544b9131999669df5d1, type: 3}
+  primaryButtonAction: {fileID: 0}
+  secondaryButtonAction: {fileID: 0}

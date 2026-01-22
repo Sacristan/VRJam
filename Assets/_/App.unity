@@ -18005,6 +18005,26 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -23
       objectReference: {fileID: 0}
+    - target: {fileID: 3815201552800506848, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3815201552800506848, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3815201552800506848, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3815201552800506848, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3815201552800506848, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4812664152473816678, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: -10

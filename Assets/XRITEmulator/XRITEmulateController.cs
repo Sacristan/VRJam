@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.InputSystem.Utilities;
@@ -14,219 +13,248 @@ using UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using CommonUsages = UnityEngine.InputSystem.CommonUsages;
 
+public class ControllerInputState
+{
+    public bool GripActive { get; private set; }
+    public bool TriggerActive { get; private set; }
+    public bool JoystickActive { get; private set; }
+    public bool PrimaryActive { get; private set; }
+    public bool SecondaryActive { get; private set; }
+    public bool GripLocked { get; private set; }
+
+    public void ActivateGrip(InputAction.CallbackContext ctx)
+    {
+        UnlockGrip();
+        GripActive = true;
+    }
+
+    public void DeactivateGrip(InputAction.CallbackContext ctx)
+    {
+        if (!GripLocked)
+            GripActive = false;
+    }
+
+    public void ToggleLockGrip(InputAction.CallbackContext ctx)
+    {
+        if (!GripLocked && GripActive)
+        {
+            GripLocked = true;
+            Debug.Log("Grip locked");
+        }
+        else
+        {
+            UnlockGrip();
+        }
+    }
+
+    private void UnlockGrip()
+    {
+        if (GripLocked)
+        {
+            GripLocked = false;
+            GripActive = false;
+            Debug.Log("Grip unlocked");
+        }
+    }
+
+    public void ActivateTrigger(InputAction.CallbackContext ctx) => TriggerActive = true;
+    public void DeactivateTrigger(InputAction.CallbackContext ctx) => TriggerActive = false;
+
+    public void ActivateJoystick(InputAction.CallbackContext ctx) => JoystickActive = true;
+    public void DeactivateJoystick(InputAction.CallbackContext ctx) => JoystickActive = false;
+
+    public void ActivatePrimary(InputAction.CallbackContext ctx) => PrimaryActive = true;
+    public void DeactivatePrimary(InputAction.CallbackContext ctx) => PrimaryActive = false;
+
+    public void ActivateSecondary(InputAction.CallbackContext ctx) => SecondaryActive = true;
+    public void DeactivateSecondary(InputAction.CallbackContext ctx) => SecondaryActive = false;
+}
+
 [DefaultExecutionOrder(XRInteractionUpdateOrder.k_DeviceSimulator)]
 public class XRITEmulateController : MonoBehaviour
 {
     [SerializeField] private InteractorHandedness side = InteractorHandedness.Left;
 
-    [SerializeField] private Vector3 controllerPos = new(-0.15f, -0.15f, 0.3f); //invert x value for Right controller
-
-    [SerializeField] private Vector3 controllerRot = new(0f, -10f, 0f); //invert y value for Right controller
-
-    [Header("Inputs")] [SerializeField] private InputActionReference gripAction;
+    [SerializeField] private InputActionReference gripAction;
     [SerializeField] private InputActionReference triggerAction;
     [SerializeField] private InputActionReference toggleActiveGripAction;
     [SerializeField] private InputActionReference joystickAction;
+    [SerializeField] private InputActionReference primaryButtonAction;
+    [SerializeField] private InputActionReference secondaryButtonAction;
 
     private XRSimulatedControllerState _controllerState;
     private XRSimulatedController _controllerDevice;
 
-    private bool _gripInputActive;
-    private bool _triggerInputActive;
-    private bool _lockActiveGrip;
-    private bool _joystickInputActive;
+    private ControllerInputState _inputState = new();
 
-    private bool wasEnabled = false;
+    private bool _isInitialized;
+
+    public InteractorHandedness Side => side;
 
     private void OnEnable()
     {
-        Set();
+        StartCoroutine(InitRoutine());
 
-        gripAction.action.performed += ActivateGripInput;
-        gripAction.action.canceled += DeactivateGripInput;
+        IEnumerator InitRoutine()
+        {
+            yield return new WaitUntil(() => XRITEmulator.IsReady);
 
-        triggerAction.action.performed += ActivateTriggerInput;
-        triggerAction.action.canceled += DeactivateTriggerInput;
+            if (!_isInitialized)
+            {
+                InitializeController();
+                _isInitialized = true;
+            }
 
-        toggleActiveGripAction.action.performed += ToggleLockActiveGrip;
-
-        joystickAction.action.performed += ActivateJoystickInput;
-        joystickAction.action.canceled += DeactivateJoystickInput;
-
-        wasEnabled = true;
+            SubscribeToInputActions();
+        }
     }
+
 
     private void OnDisable()
     {
-        Unset();
-
-        gripAction.action.performed -= ActivateGripInput;
-        gripAction.action.canceled -= DeactivateGripInput;
-
-        triggerAction.action.performed -= ActivateTriggerInput;
-        triggerAction.action.canceled -= DeactivateTriggerInput;
-
-        toggleActiveGripAction.action.performed -= ToggleLockActiveGrip;
-
-        joystickAction.action.performed -= ActivateJoystickInput;
-        joystickAction.action.canceled -= DeactivateJoystickInput;
-
-        wasEnabled = false;
-    }
-
-
-    private void OnApplicationFocus(bool hasFocus)
-    {
-        if (!wasEnabled) return;
-
-        if (hasFocus)
-        {
-            Set();
-        }
-        else
-        {
-            Unset();
-        }
-    }
-
-    void Set()
-    {
-        if (_controllerDevice != null) DestroyControllerDevice();
-
-        CreateControllerDevice();
-
-        _controllerState.Reset();
-        _controllerState.devicePosition = controllerPos;
-        _controllerState.deviceRotation = Quaternion.Euler(controllerRot);
-        _controllerState.isTracked = true;
-    }
-
-    void Unset()
-    {
+        UnsubscribeFromInputActions();
         DestroyControllerDevice();
     }
 
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!_isInitialized) return;
+
+        if (hasFocus)
+            InitializeController();
+        else
+            DestroyControllerDevice();
+    }
+
+    private void InitializeController()
+    {
+        if (_controllerDevice != null)
+            DestroyControllerDevice();
+
+        CreateControllerDevice();
+        ResetControllerState();
+    }
+
+    private void ResetControllerState()
+    {
+        _controllerState.Reset();
+        _controllerState.devicePosition = XRITEmulator.Instance.Config.GetControllerPosition(side);
+        _controllerState.deviceRotation = XRITEmulator.Instance.Config.GetControllerRotation(side);
+        _controllerState.isTracked = true;
+    }
 
     private void CreateControllerDevice()
     {
-        InternedString usage = DefineUsage();
-        InputDeviceDescription descRightHand = new InputDeviceDescription
+        var usage = GetControllerUsage();
+        var deviceDesc = new InputDeviceDescription
         {
             product = nameof(XRSimulatedController),
             capabilities = new XRDeviceDescriptor
             {
                 deviceName = $"{nameof(XRSimulatedController)} - {usage}",
-                characteristics = DefineInputDeviceCharacteristics(),
+                characteristics = GetInputDeviceCharacteristics(),
             }.ToJson(),
         };
 
-        // SimulatedInputLayoutLoader already registered layout so device can be added
-        _controllerDevice = InputSystem.AddDevice(descRightHand) as XRSimulatedController;
-        InputSystem.SetDeviceUsage(_controllerDevice, usage);
-    }
-
-    private InternedString DefineUsage()
-    {
-        switch (side)
+        _controllerDevice = InputSystem.AddDevice(deviceDesc) as XRSimulatedController;
+        if (_controllerDevice != null)
         {
-            case InteractorHandedness.Left: return CommonUsages.LeftHand;
-            case InteractorHandedness.Right: return CommonUsages.RightHand;
-
-            default: throw new ArgumentOutOfRangeException();
+            InputSystem.SetDeviceUsage(_controllerDevice, usage);
         }
     }
 
-    private InputDeviceCharacteristics DefineInputDeviceCharacteristics()
+    private InternedString GetControllerUsage()
     {
-        switch (side)
-        {
-            case InteractorHandedness.Left: return XRInputTrackingAggregator.Characteristics.leftController;
-            case InteractorHandedness.Right: return XRInputTrackingAggregator.Characteristics.rightController;
+        return side == InteractorHandedness.Left
+            ? CommonUsages.LeftHand
+            : CommonUsages.RightHand;
+    }
 
-            default: throw new ArgumentOutOfRangeException();
-        }
+    private InputDeviceCharacteristics GetInputDeviceCharacteristics()
+    {
+        return side == InteractorHandedness.Left
+            ? XRInputTrackingAggregator.Characteristics.leftController
+            : XRInputTrackingAggregator.Characteristics.rightController;
     }
 
     private void DestroyControllerDevice()
     {
-        // Debug.Log($"{nameof(DestroyControllerDevice)}");
-        InputSystem.RemoveDevice(_controllerDevice);
-        _controllerDevice = null;
-    }
-
-    private void ActivateGripInput(InputAction.CallbackContext ctx)
-    {
-        UnlockActiveGrip();
-        _gripInputActive = true;
-    }
-
-    private void DeactivateGripInput(InputAction.CallbackContext ctx)
-    {
-        if (!_lockActiveGrip)
+        if (_controllerDevice != null)
         {
-            _gripInputActive = false;
+            InputSystem.RemoveDevice(_controllerDevice);
+            _controllerDevice = null;
         }
     }
 
-    private void ActivateTriggerInput(InputAction.CallbackContext ctx)
+    private void SubscribeToInputActions()
     {
-        _triggerInputActive = true;
+        SubscribeAction(gripAction, _inputState.ActivateGrip, _inputState.DeactivateGrip);
+        SubscribeAction(triggerAction, _inputState.ActivateTrigger, _inputState.DeactivateTrigger);
+        SubscribeAction(toggleActiveGripAction, _inputState.ToggleLockGrip, null);
+        SubscribeAction(joystickAction, _inputState.ActivateJoystick, _inputState.DeactivateJoystick);
+        SubscribeAction(primaryButtonAction, _inputState.ActivatePrimary, _inputState.DeactivatePrimary);
+        SubscribeAction(secondaryButtonAction, _inputState.ActivateSecondary, _inputState.DeactivateSecondary);
     }
 
-    private void DeactivateTriggerInput(InputAction.CallbackContext ctx)
+    private void UnsubscribeFromInputActions()
     {
-        _triggerInputActive = false;
+        UnsubscribeAction(gripAction, _inputState.ActivateGrip, _inputState.DeactivateGrip);
+        UnsubscribeAction(triggerAction, _inputState.ActivateTrigger, _inputState.DeactivateTrigger);
+        UnsubscribeAction(toggleActiveGripAction, _inputState.ToggleLockGrip, null);
+        UnsubscribeAction(joystickAction, _inputState.ActivateJoystick, _inputState.DeactivateJoystick);
+        UnsubscribeAction(primaryButtonAction, _inputState.ActivatePrimary, _inputState.DeactivatePrimary);
+        UnsubscribeAction(secondaryButtonAction, _inputState.ActivateSecondary, _inputState.DeactivateSecondary);
     }
 
-    private void ActivateJoystickInput(InputAction.CallbackContext ctx)
+    private void SubscribeAction(InputActionReference actionRef,
+        Action<InputAction.CallbackContext> performed,
+        Action<InputAction.CallbackContext> canceled)
     {
-        _joystickInputActive = true;
+        if (actionRef?.action == null) return;
+
+        if (performed != null)
+            actionRef.action.performed += performed;
+        if (canceled != null)
+            actionRef.action.canceled += canceled;
     }
 
-    private void DeactivateJoystickInput(InputAction.CallbackContext ctx)
+    private void UnsubscribeAction(InputActionReference actionRef,
+        Action<InputAction.CallbackContext> performed,
+        Action<InputAction.CallbackContext> canceled)
     {
-        _joystickInputActive = false;
-    }
+        if (actionRef?.action == null) return;
 
-    private void ToggleLockActiveGrip(InputAction.CallbackContext ctx)
-    {
-        bool newValue = !_lockActiveGrip;
-        if (newValue && _gripInputActive)
-        {
-            _lockActiveGrip = true;
-            Debug.Log("Active grip locked");
-        }
-        else
-        {
-            UnlockActiveGrip();
-        }
-    }
-
-    private void UnlockActiveGrip()
-    {
-        if (_lockActiveGrip)
-        {
-            _lockActiveGrip = false;
-            _gripInputActive = false;
-            Debug.Log("Active grip unlocked");
-        }
+        if (performed != null)
+            actionRef.action.performed -= performed;
+        if (canceled != null)
+            actionRef.action.canceled -= canceled;
     }
 
     private void Update()
     {
         if (_controllerDevice == null) return;
-        ProcessControlInput();
+
+        UpdateControllerState();
         InputState.Change(_controllerDevice, _controllerState);
     }
 
-    protected virtual void ProcessControlInput()
+    private void UpdateControllerState()
     {
-        _controllerState.grip = _gripInputActive ? 1f : 0f;
-        _controllerState.WithButton(ControllerButton.GripButton, _gripInputActive);
-        _controllerState.trigger = _triggerInputActive ? 1f : 0f;
-        _controllerState.WithButton(ControllerButton.TriggerButton, _triggerInputActive);
-        _controllerState.primary2DAxis = _joystickInputActive
+        // Grip
+        _controllerState.grip = _inputState.GripActive ? 1f : 0f;
+        _controllerState.WithButton(ControllerButton.GripButton, _inputState.GripActive);
+
+        // Trigger
+        _controllerState.trigger = _inputState.TriggerActive ? 1f : 0f;
+        _controllerState.WithButton(ControllerButton.TriggerButton, _inputState.TriggerActive);
+
+        // Joystick
+        _controllerState.primary2DAxis = _inputState.JoystickActive && joystickAction?.action != null
             ? joystickAction.action.ReadValue<Vector2>()
             : Vector2.zero;
+
+        // Buttons
+        _controllerState.WithButton(ControllerButton.PrimaryButton, _inputState.PrimaryActive);
+        _controllerState.WithButton(ControllerButton.SecondaryButton, _inputState.SecondaryActive);
     }
 }
