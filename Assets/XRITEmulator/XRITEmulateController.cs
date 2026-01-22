@@ -13,7 +13,7 @@ using UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using CommonUsages = UnityEngine.InputSystem.CommonUsages;
 
-public class ControllerInputState
+public class EmulatedControllerInputState
 {
     public bool GripActive { get; private set; }
     public bool TriggerActive { get; private set; }
@@ -82,13 +82,12 @@ public class XRITEmulateController : MonoBehaviour
     [SerializeField] private InputActionReference primaryButtonAction;
     [SerializeField] private InputActionReference secondaryButtonAction;
 
-    private XRSimulatedControllerState _controllerState;
-    private XRSimulatedController _controllerDevice;
+    private XRSimulatedController _xrSimulatedController;
+    private XRSimulatedControllerState _xrSimulatedControllerState;
 
-    private ControllerInputState _inputState = new();
+    private readonly EmulatedControllerInputState _emulatedControllerInputState = new();
 
     private bool _isInitialized;
-
     public InteractorHandedness Side => side;
 
     private void OnEnable()
@@ -128,7 +127,7 @@ public class XRITEmulateController : MonoBehaviour
 
     private void InitializeController()
     {
-        if (_controllerDevice != null)
+        if (_xrSimulatedController != null)
             DestroyControllerDevice();
 
         CreateControllerDevice();
@@ -137,10 +136,10 @@ public class XRITEmulateController : MonoBehaviour
 
     private void ResetControllerState()
     {
-        _controllerState.Reset();
-        _controllerState.devicePosition = XRITEmulator.Instance.Config.GetControllerPosition(side);
-        _controllerState.deviceRotation = XRITEmulator.Instance.Config.GetControllerRotation(side);
-        _controllerState.isTracked = true;
+        _xrSimulatedControllerState.Reset();
+        _xrSimulatedControllerState.devicePosition = XRITEmulator.Instance.Config.GetControllerPosition(side);
+        _xrSimulatedControllerState.deviceRotation = XRITEmulator.Instance.Config.GetControllerRotation(side);
+        _xrSimulatedControllerState.isTracked = true;
     }
 
     private void CreateControllerDevice()
@@ -156,10 +155,10 @@ public class XRITEmulateController : MonoBehaviour
             }.ToJson(),
         };
 
-        _controllerDevice = InputSystem.AddDevice(deviceDesc) as XRSimulatedController;
-        if (_controllerDevice != null)
+        _xrSimulatedController = InputSystem.AddDevice(deviceDesc) as XRSimulatedController;
+        if (_xrSimulatedController != null)
         {
-            InputSystem.SetDeviceUsage(_controllerDevice, usage);
+            InputSystem.SetDeviceUsage(_xrSimulatedController, usage);
         }
     }
 
@@ -179,31 +178,31 @@ public class XRITEmulateController : MonoBehaviour
 
     private void DestroyControllerDevice()
     {
-        if (_controllerDevice != null)
+        if (_xrSimulatedController != null)
         {
-            InputSystem.RemoveDevice(_controllerDevice);
-            _controllerDevice = null;
+            InputSystem.RemoveDevice(_xrSimulatedController);
+            _xrSimulatedController = null;
         }
     }
 
     private void SubscribeToInputActions()
     {
-        SubscribeAction(gripAction, _inputState.ActivateGrip, _inputState.DeactivateGrip);
-        SubscribeAction(triggerAction, _inputState.ActivateTrigger, _inputState.DeactivateTrigger);
-        SubscribeAction(toggleActiveGripAction, _inputState.ToggleLockGrip, null);
-        SubscribeAction(joystickAction, _inputState.ActivateJoystick, _inputState.DeactivateJoystick);
-        SubscribeAction(primaryButtonAction, _inputState.ActivatePrimary, _inputState.DeactivatePrimary);
-        SubscribeAction(secondaryButtonAction, _inputState.ActivateSecondary, _inputState.DeactivateSecondary);
+        SubscribeAction(gripAction, _emulatedControllerInputState.ActivateGrip, _emulatedControllerInputState.DeactivateGrip);
+        SubscribeAction(triggerAction, _emulatedControllerInputState.ActivateTrigger, _emulatedControllerInputState.DeactivateTrigger);
+        SubscribeAction(toggleActiveGripAction, _emulatedControllerInputState.ToggleLockGrip, null);
+        SubscribeAction(joystickAction, _emulatedControllerInputState.ActivateJoystick, _emulatedControllerInputState.DeactivateJoystick);
+        SubscribeAction(primaryButtonAction, _emulatedControllerInputState.ActivatePrimary, _emulatedControllerInputState.DeactivatePrimary);
+        SubscribeAction(secondaryButtonAction, _emulatedControllerInputState.ActivateSecondary, _emulatedControllerInputState.DeactivateSecondary);
     }
 
     private void UnsubscribeFromInputActions()
     {
-        UnsubscribeAction(gripAction, _inputState.ActivateGrip, _inputState.DeactivateGrip);
-        UnsubscribeAction(triggerAction, _inputState.ActivateTrigger, _inputState.DeactivateTrigger);
-        UnsubscribeAction(toggleActiveGripAction, _inputState.ToggleLockGrip, null);
-        UnsubscribeAction(joystickAction, _inputState.ActivateJoystick, _inputState.DeactivateJoystick);
-        UnsubscribeAction(primaryButtonAction, _inputState.ActivatePrimary, _inputState.DeactivatePrimary);
-        UnsubscribeAction(secondaryButtonAction, _inputState.ActivateSecondary, _inputState.DeactivateSecondary);
+        UnsubscribeAction(gripAction, _emulatedControllerInputState.ActivateGrip, _emulatedControllerInputState.DeactivateGrip);
+        UnsubscribeAction(triggerAction, _emulatedControllerInputState.ActivateTrigger, _emulatedControllerInputState.DeactivateTrigger);
+        UnsubscribeAction(toggleActiveGripAction, _emulatedControllerInputState.ToggleLockGrip, null);
+        UnsubscribeAction(joystickAction, _emulatedControllerInputState.ActivateJoystick, _emulatedControllerInputState.DeactivateJoystick);
+        UnsubscribeAction(primaryButtonAction, _emulatedControllerInputState.ActivatePrimary, _emulatedControllerInputState.DeactivatePrimary);
+        UnsubscribeAction(secondaryButtonAction, _emulatedControllerInputState.ActivateSecondary, _emulatedControllerInputState.DeactivateSecondary);
     }
 
     private void SubscribeAction(InputActionReference actionRef,
@@ -232,29 +231,29 @@ public class XRITEmulateController : MonoBehaviour
 
     private void Update()
     {
-        if (_controllerDevice == null) return;
+        if (_xrSimulatedController == null) return;
 
         UpdateControllerState();
-        InputState.Change(_controllerDevice, _controllerState);
+        InputState.Change(_xrSimulatedController, _xrSimulatedControllerState);
     }
 
     private void UpdateControllerState()
     {
         // Grip
-        _controllerState.grip = _inputState.GripActive ? 1f : 0f;
-        _controllerState.WithButton(ControllerButton.GripButton, _inputState.GripActive);
+        _xrSimulatedControllerState.grip = _emulatedControllerInputState.GripActive ? 1f : 0f;
+        _xrSimulatedControllerState.WithButton(ControllerButton.GripButton, _emulatedControllerInputState.GripActive);
 
         // Trigger
-        _controllerState.trigger = _inputState.TriggerActive ? 1f : 0f;
-        _controllerState.WithButton(ControllerButton.TriggerButton, _inputState.TriggerActive);
+        _xrSimulatedControllerState.trigger = _emulatedControllerInputState.TriggerActive ? 1f : 0f;
+        _xrSimulatedControllerState.WithButton(ControllerButton.TriggerButton, _emulatedControllerInputState.TriggerActive);
 
         // Joystick
-        _controllerState.primary2DAxis = _inputState.JoystickActive && joystickAction?.action != null
+        _xrSimulatedControllerState.primary2DAxis = _emulatedControllerInputState.JoystickActive && joystickAction?.action != null
             ? joystickAction.action.ReadValue<Vector2>()
             : Vector2.zero;
 
         // Buttons
-        _controllerState.WithButton(ControllerButton.PrimaryButton, _inputState.PrimaryActive);
-        _controllerState.WithButton(ControllerButton.SecondaryButton, _inputState.SecondaryActive);
+        _xrSimulatedControllerState.WithButton(ControllerButton.PrimaryButton, _emulatedControllerInputState.PrimaryActive);
+        _xrSimulatedControllerState.WithButton(ControllerButton.SecondaryButton, _emulatedControllerInputState.SecondaryActive);
     }
 }
