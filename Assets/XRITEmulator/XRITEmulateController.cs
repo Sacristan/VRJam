@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.InputSystem.Utilities;
@@ -16,8 +18,10 @@ using CommonUsages = UnityEngine.InputSystem.CommonUsages;
 public class XRITEmulateController : MonoBehaviour
 {
     [SerializeField] private InteractorHandedness side = InteractorHandedness.Left;
-    [SerializeField] private Vector3 controllerPos = new(-0.121f, -0.088f, 0.225f); //invert x value for Right controller
-    [SerializeField] private Vector3 controllerRot = new(0f, -0f, 0f); //invert y value for Right controller
+
+    [SerializeField] private Vector3 controllerPos = new(-0.15f, -0.15f, 0.3f); //invert x value for Right controller
+
+    [SerializeField] private Vector3 controllerRot = new(0f, -10f, 0f); //invert y value for Right controller
 
     [Header("Inputs")] [SerializeField] private InputActionReference gripAction;
     [SerializeField] private InputActionReference triggerAction;
@@ -32,14 +36,15 @@ public class XRITEmulateController : MonoBehaviour
     private bool _lockActiveGrip;
     private bool _joystickInputActive;
 
+    private IEnumerator Start()
+    {
+        yield return new WaitForSeconds(1f);
+        Debug.Log("Starting XRITEmulateController");
+    }
+
     private void OnEnable()
     {
-        CreateControllerDevice();
-
-        _controllerState.Reset();
-        _controllerState.devicePosition = controllerPos;
-        _controllerState.deviceRotation = Quaternion.Euler(controllerRot);
-        _controllerState.isTracked = true;
+        Set();
 
         gripAction.action.performed += ActivateGripInput;
         gripAction.action.canceled += DeactivateGripInput;
@@ -53,9 +58,41 @@ public class XRITEmulateController : MonoBehaviour
         joystickAction.action.canceled += DeactivateJoystickInput;
     }
 
-    private void OnDisable()
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (hasFocus)
+        {
+            Set();
+        }
+        else
+        {
+            Unset();
+        }
+    }
+
+    void Set()
+    {
+        if (_controllerDevice != null)
+        {
+            DestroyControllerDevice();
+        }
+
+        CreateControllerDevice();
+
+        _controllerState.Reset();
+        _controllerState.devicePosition = controllerPos;
+        _controllerState.deviceRotation = Quaternion.Euler(controllerRot);
+        _controllerState.isTracked = true;
+    }
+
+    void Unset()
     {
         DestroyControllerDevice();
+    }
+
+    private void OnDisable()
+    {
+        Unset();
 
         gripAction.action.performed -= ActivateGripInput;
         gripAction.action.canceled -= DeactivateGripInput;
@@ -111,6 +148,7 @@ public class XRITEmulateController : MonoBehaviour
 
     private void DestroyControllerDevice()
     {
+        Debug.Log($"{nameof(DestroyControllerDevice)}");
         InputSystem.RemoveDevice(_controllerDevice);
         _controllerDevice = null;
     }
