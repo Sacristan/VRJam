@@ -4,13 +4,12 @@ using UnityEngine.InputSystem;
 
 public class XRITEmulateLook : MonoBehaviour
 {
-    [SerializeField] private float horizontalRotationMultiplier = 0.2f;
-    [SerializeField] private float verticalRotationMultiplier = 0.2f;
-    [SerializeField] private float maxVerticalAngle = 80f;
-    [SerializeField] private bool captureCursor = true;
-    [SerializeField] private bool invertVertical = false;
     [SerializeField] private InputActionReference lookAroundAction;
 
+    float Sensitivity => XRITEmulator.Instance.Config.sensitivity;
+    float VerticalAngleTresholdTreshold => XRITEmulator.Instance.Config.verticalAngleTreshold;
+    bool ShowCursor => XRITEmulator.Instance.Config.showCursor;
+    
     private XROrigin _xrOrigin;
     private Transform _bodyTransform;
     private Transform _cameraTransform;
@@ -61,15 +60,15 @@ public class XRITEmulateLook : MonoBehaviour
         Vector2 input = ctx.ReadValue<Vector2>();
 
         // Horizontal rotation (body)
-        _bodyTransform.Rotate(Vector3.up, input.x * horizontalRotationMultiplier, Space.World);
+        _bodyTransform.Rotate(Vector3.up, input.x * Sensitivity, Space.World);
 
         // Vertical rotation (camera) with clamping
-        float verticalDelta = input.y * verticalRotationMultiplier * (invertVertical ? 1f : -1f);
+        float verticalDelta = -input.y * Sensitivity;
 
         _currentVerticalRotation = Mathf.Clamp(
             _currentVerticalRotation + verticalDelta,
-            -maxVerticalAngle,
-            maxVerticalAngle
+            -VerticalAngleTresholdTreshold,
+            VerticalAngleTresholdTreshold
         );
 
         _cameraTransform.localRotation = Quaternion.Euler(_currentVerticalRotation, 0f, 0f);
@@ -95,13 +94,13 @@ public class XRITEmulateLook : MonoBehaviour
 
     private void CaptureCursor()
     {
-        if (captureCursor)
+        if (ShowCursor)
             Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void ReleaseCursor()
     {
-        if (captureCursor)
+        if (ShowCursor)
             Cursor.lockState = CursorLockMode.None;
     }
 }

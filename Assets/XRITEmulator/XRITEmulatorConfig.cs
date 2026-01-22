@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 /// <summary>
@@ -16,10 +17,9 @@ public class XREmulatorConfig : ScriptableObject
     [Header("Movement Settings")] public float movementSpeed = 2f;
     public float verticalMoveSpeed = 0.1f;
 
-    [Header("Look Settings")] public float horizontalSensitivity = 0.2f;
-    public float verticalSensitivity = 0.2f;
-    public bool captureCursor = true;
-    public float maxVerticalAngle = 80f;
+    public float sensitivity = 0.2f;
+    public bool showCursor = true;
+    public float verticalAngleTreshold = 80f;
 
     public Vector3 GetControllerPosition(InteractorHandedness interactorHandedness)
     {

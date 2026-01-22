@@ -5,9 +5,6 @@ using UnityEngine.XR.Interaction.Toolkit.Locomotion.Movement;
 
 public class XRITEmulateMovement : MonoBehaviour
 {
-    [SerializeField] private float movementSpeed = 2f;
-    [SerializeField] private float verticalMoveSpeed = 1f;
-    [SerializeField] private bool enableVerticalMovement = true;
     [SerializeField] private InputActionReference movementAction;
     [SerializeField] private InputActionReference upDownAction;
 
@@ -17,6 +14,9 @@ public class XRITEmulateMovement : MonoBehaviour
     private float _defaultMoveSpeed;
     private bool _verticalMoveActive;
     private bool _isInitialized;
+
+    float movementSpeed => XRITEmulator.Instance.Config.movementSpeed;
+    float verticalMoveSpeed => XRITEmulator.Instance.Config.verticalMoveSpeed;
 
     private void OnEnable()
     {
@@ -32,6 +32,11 @@ public class XRITEmulateMovement : MonoBehaviour
     private void OnDisable()
     {
         UnsubscribeFromInputs();
+    }
+
+    private void Update()
+    {
+        if (_verticalMoveActive) ProcessVerticalMovement();
     }
 
     private void InitializeComponents()
@@ -57,7 +62,7 @@ public class XRITEmulateMovement : MonoBehaviour
             movementAction.action.canceled += OnMovementCanceled;
         }
 
-        if (upDownAction?.action != null && enableVerticalMovement)
+        if (upDownAction?.action != null)
         {
             upDownAction.action.performed += OnVerticalMoveStarted;
             upDownAction.action.canceled += OnVerticalMoveStopped;
@@ -101,13 +106,6 @@ public class XRITEmulateMovement : MonoBehaviour
         _verticalMoveActive = false;
     }
 
-    private void Update()
-    {
-        if (_verticalMoveActive && enableVerticalMovement)
-        {
-            ProcessVerticalMovement();
-        }
-    }
 
     private void ProcessVerticalMovement()
     {
