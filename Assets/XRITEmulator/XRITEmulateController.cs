@@ -36,11 +36,7 @@ public class XRITEmulateController : MonoBehaviour
     private bool _lockActiveGrip;
     private bool _joystickInputActive;
 
-    private IEnumerator Start()
-    {
-        yield return new WaitForSeconds(1f);
-        Debug.Log("Starting XRITEmulateController");
-    }
+    private bool wasEnabled = false;
 
     private void OnEnable()
     {
@@ -56,38 +52,8 @@ public class XRITEmulateController : MonoBehaviour
 
         joystickAction.action.performed += ActivateJoystickInput;
         joystickAction.action.canceled += DeactivateJoystickInput;
-    }
 
-    private void OnApplicationFocus(bool hasFocus)
-    {
-        if (hasFocus)
-        {
-            Set();
-        }
-        else
-        {
-            Unset();
-        }
-    }
-
-    void Set()
-    {
-        if (_controllerDevice != null)
-        {
-            DestroyControllerDevice();
-        }
-
-        CreateControllerDevice();
-
-        _controllerState.Reset();
-        _controllerState.devicePosition = controllerPos;
-        _controllerState.deviceRotation = Quaternion.Euler(controllerRot);
-        _controllerState.isTracked = true;
-    }
-
-    void Unset()
-    {
-        DestroyControllerDevice();
+        wasEnabled = true;
     }
 
     private void OnDisable()
@@ -104,7 +70,42 @@ public class XRITEmulateController : MonoBehaviour
 
         joystickAction.action.performed -= ActivateJoystickInput;
         joystickAction.action.canceled -= DeactivateJoystickInput;
+
+        wasEnabled = false;
     }
+
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!wasEnabled) return;
+
+        if (hasFocus)
+        {
+            Set();
+        }
+        else
+        {
+            Unset();
+        }
+    }
+
+    void Set()
+    {
+        if (_controllerDevice != null) DestroyControllerDevice();
+
+        CreateControllerDevice();
+
+        _controllerState.Reset();
+        _controllerState.devicePosition = controllerPos;
+        _controllerState.deviceRotation = Quaternion.Euler(controllerRot);
+        _controllerState.isTracked = true;
+    }
+
+    void Unset()
+    {
+        DestroyControllerDevice();
+    }
+
 
     private void CreateControllerDevice()
     {
@@ -148,7 +149,7 @@ public class XRITEmulateController : MonoBehaviour
 
     private void DestroyControllerDevice()
     {
-        Debug.Log($"{nameof(DestroyControllerDevice)}");
+        // Debug.Log($"{nameof(DestroyControllerDevice)}");
         InputSystem.RemoveDevice(_controllerDevice);
         _controllerDevice = null;
     }
@@ -213,6 +214,7 @@ public class XRITEmulateController : MonoBehaviour
 
     private void Update()
     {
+        if (_controllerDevice == null) return;
         ProcessControlInput();
         InputState.Change(_controllerDevice, _controllerState);
     }
