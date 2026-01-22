@@ -15,7 +15,7 @@ public class XREmulatorConfig : ScriptableObject
     public Vector3 rightControllerRotation = new(0f, 10f, 0f);
 
     [Header("Movement Settings")] public float movementSpeed = 2f;
-    public float verticalMoveSpeed = 0.1f;
+    [FormerlySerializedAs("verticalMoveSpeed")] public float adjustHeightSpeed = 0.1f;
 
     public float sensitivity = 0.2f;
     public bool showCursor = true;

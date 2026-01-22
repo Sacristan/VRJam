@@ -15,8 +15,8 @@ public class XRITEmulateMovement : MonoBehaviour
     private bool _verticalMoveActive;
     private bool _isInitialized;
 
-    float movementSpeed => XRITEmulator.Instance.Config.movementSpeed;
-    float verticalMoveSpeed => XRITEmulator.Instance.Config.verticalMoveSpeed;
+    float MovementSpeed => XRITEmulator.Instance.Config.movementSpeed;
+    float AdjustHeightSpeed => XRITEmulator.Instance.Config.adjustHeightSpeed;
 
     private void OnEnable()
     {
@@ -87,7 +87,7 @@ public class XRITEmulateMovement : MonoBehaviour
     private void OnMovementPerformed(InputAction.CallbackContext ctx)
     {
         if (_moveProvider != null)
-            _moveProvider.moveSpeed = _defaultMoveSpeed * movementSpeed;
+            _moveProvider.moveSpeed = _defaultMoveSpeed * MovementSpeed;
     }
 
     private void OnMovementCanceled(InputAction.CallbackContext ctx)
@@ -112,7 +112,7 @@ public class XRITEmulateMovement : MonoBehaviour
         if (_xrOriginTransform == null || upDownAction?.action == null) return;
 
         float inputValue = upDownAction.action.ReadValue<float>();
-        Vector3 movement = Vector3.up * (inputValue * verticalMoveSpeed * Time.deltaTime);
+        Vector3 movement = Vector3.up * (inputValue * AdjustHeightSpeed * Time.deltaTime);
         _xrOriginTransform.Translate(movement, Space.World);
     }
 }

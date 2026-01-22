@@ -6,10 +6,6 @@ public class XRITEmulateLook : MonoBehaviour
 {
     [SerializeField] private InputActionReference lookAroundAction;
 
-    float Sensitivity => XRITEmulator.Instance.Config.sensitivity;
-    float VerticalAngleTresholdTreshold => XRITEmulator.Instance.Config.verticalAngleTreshold;
-    bool ShowCursor => XRITEmulator.Instance.Config.showCursor;
-    
     private XROrigin _xrOrigin;
     private Transform _bodyTransform;
     private Transform _cameraTransform;
@@ -18,6 +14,10 @@ public class XRITEmulateLook : MonoBehaviour
     private int _lastRotationFrame;
     private bool _wasActive;
 
+    float Sensitivity => XRITEmulator.Instance.Config.sensitivity;
+    float VerticalAngleTresholdTreshold => XRITEmulator.Instance.Config.verticalAngleTreshold;
+    bool ShowCursor => XRITEmulator.Instance.Config.showCursor;
+    
     private void OnEnable()
     {
         InitializeXROrigin();
