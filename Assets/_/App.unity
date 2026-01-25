@@ -2085,6 +2085,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: _config
+      value: 
+      objectReference: {fileID: 11400000, guid: 15353b89e1ec872449df95d53cb0b398, type: 2}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: canFall
       value: 1
       objectReference: {fileID: 0}

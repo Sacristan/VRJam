@@ -34,7 +34,8 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
     public RA2BoneCollisionHandler RagdollBone => _ragdollBone;
     public RagdollChainBone ChainBone { get; private set; }
     public bool Selected => isSelected;
-
+    public ERagdollBoneID BoneID => ChainBone.BoneID;
+    
     private List<UnityEngine.XR.Interaction.Toolkit.Interactors.IXRSelectInteractor> _currentInteractors = new();
     private readonly Dictionary<IXRInteractor, GrabPointData> _grabPoints = new();
     
@@ -43,7 +44,7 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         _ragdoll = ragdoll;
         ChainBone = chainBone;
 
-        ApplyBoneSettings();
+        ApplyConfigValues(ragdoll.Config.GetConfigForBone(BoneID));
 
         colliders.Clear();
         foreach (var t in chainBone.Colliders)
@@ -157,21 +158,20 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         return closestPoint;
     }
 
-
-    void ApplyBoneSettings()
+    public void ApplyConfigValues(GrabbableRagdollConfig.GrabbableRagdollBoneConfig config)
     {
-        ConfigurableJoint boneJoint = ChainBone.Joint;
-        if (boneJoint == null)
+        if (config.overrideSpring)
         {
-            Debug.LogWarning("No joint found on bone; skipping bone settings.", this);
-            return;
-        }
+            ConfigurableJoint boneJoint = ChainBone.Joint;
 
-        // Optional: you could set joint drive parameters here if needed
-        // JointDrive slerpDrive = boneJoint.slerpDrive;
-        // slerpDrive.positionSpring = 500;
-        // slerpDrive.positionDamper = 50;
-        // boneJoint.slerpDrive = slerpDrive;
+            JointDrive slerpDrive = boneJoint.slerpDrive;
+            
+            slerpDrive.positionSpring = config.driveSpring;
+            slerpDrive.maximumForce = config.driveSpring;
+            slerpDrive.positionDamper = config.driveDamper;
+            
+            boneJoint.slerpDrive = slerpDrive;
+        }
     }
     
     public static void ForceDrop(XRBaseInteractor baseInteractor)

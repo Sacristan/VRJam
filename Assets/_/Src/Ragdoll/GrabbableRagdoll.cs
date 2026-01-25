@@ -15,6 +15,9 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 [RequireComponent(typeof(RagdollAnimator2))]
 public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 {
+    [SerializeField] private GrabbableRagdollConfig _config;
+    public GrabbableRagdollConfig Config => _config;
+    
     private const float LOD_RAGDOLL_FADE_SPEED = 1f;
     private const float LOD_MAX_DIST_TO_CAM = 6f;
 
@@ -151,7 +154,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     {
         if (_isInitialized) return;
         _isInitialized = true;
-
+        
         RagdollAnimator2 ragdoll = _ragdoll;
         ragdoll.Handler.BaseTransform = baseTransform;
         if (!ragdoll.Handler.WasInitialized)
@@ -172,6 +175,8 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
                 foreach (RagdollChainBone boneSetup in chain.BoneSetups)
                 {
                     Rigidbody body = boneSetup.GameRigidbody;
+                    
+                    boneSetup.ForceLimitsAllTheTime = true;
 
                     var xrRagdollGrab =
                         body.gameObject.AddComponent<GrabbableRagdollBodypart>();
@@ -209,11 +214,12 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     public void OnReleased(GrabbableRagdollBodypart ragdollBodypart)
     {
+        _grabbedBodyparts.Remove(ragdollBodypart);
     }
     
     public void ReleaseThisBodypart(GrabbableRagdollBodypart ragdollBodypart)
     {
-        _grabbedBodyparts.Remove(ragdollBodypart);
+        // _grabbedBodyparts.Remove(ragdollBodypart);
     }
 
     private void LateUpdate()
