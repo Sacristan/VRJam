@@ -1,0 +1,711 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using FIMSpace.FProceduralAnimation;
+using JetBrains.Annotations;
+using Unity.XR.CoreUtils;
+using UnityEngine;
+using UnityEngine.Assertions;
+using UnityEngine.Pool;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
+//TODO: Looks like the magnet point rotation is not matching the grabbing interactor. Check on it.
+[RequireComponent(typeof(RagdollAnimator2))]
+public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
+{
+    private const float LOD_RAGDOLL_FADE_SPEED = 1f;
+    private const float LOD_MAX_DIST_TO_CAM = 6f;
+
+    private static readonly List<Collider> tmpColliderList = new(16);
+
+    public delegate void OnBoneCollision(RA2BoneCollisionHandler bone, Collision collision);
+
+    public event Action onGrabBegin;
+    public event Action onBeforeXRSelectExit;
+    public event Action onGrabEnd;
+    public event Action onRagdollFalling;
+    public event Action onRagdollStanding;
+    public event Action onGrabFalling;
+    public event OnBoneCollision onBoneCollision;
+
+    [SerializeField] public Renderer characterRenderer;
+    [SerializeField] private RA2MagnetPoint attachMagnetPoint;
+
+    [Space] [SerializeField] private bool canBeDragged = true;
+    [SerializeField] private bool allowFallOnCollision = false;
+    [SerializeField] private bool canFall = true;
+
+    [Header("Grab dragging")] [SerializeField]
+    private float minDragDistanceToFall = 0.7f;
+
+    [Header("Fall on collision")] [SerializeField]
+    private float collisionFallForce = 25f;
+
+    [SerializeField] private float collisionIgnoreAfterGetUp = 1.5f;
+    [SerializeField] private float collisionImpulseMultiplier = 3f;
+
+    [Header("Auto get up")] [SerializeField]
+    private bool allowAutoGetUp = true;
+
+    [SerializeField] private LayerMask groundMask = 1;
+    [SerializeField] private float groundCastExtraDist = 0.2f;
+    [SerializeField] private float minFallingTime = 0.15f;
+    [SerializeField] private float minLyingStableTime = 0.05f;
+
+    private readonly GrabbableRagdollBones _bones = new();
+
+    private bool _isInitialized = false;
+
+    private float _magnetOrigDragPower;
+    private float _magnetOrigRotatePower;
+    private float _magnetOrigMotionInfluence;
+    private bool _magnetOrigKinematicOnMax;
+
+    private Collider[] _allDummyColliders;
+    private GrabbableRagdollBodypartInteractable[] _allGrabInteractables;
+    private GrabbableRagdollBodypartInteractable _grabbedInteractable = null;
+
+    private ICustomRagdollGrabber _customGrabber = null;
+
+    private RagdollAnimator2 _ragdoll;
+    private RagdollHandler.OptimizationHandler _ragdollLod;
+    private bool _hasStarted = false;
+
+    private RagdollChainBone _anchorBone;
+    private float _anchorBoneRadius;
+
+    private Transform _mainCamTransform = null;
+
+    private float _lastGetUpTime = 0f;
+    private float _lastFallTime = 0f;
+    private float _lastGrabEnterTime = 0f;
+    private float _lastGrabExitTime = 0f;
+    private float _lyingStableDuration = 0f;
+
+    private bool _forceActiveRagdoll = false;
+
+    public RagdollAnimator2 RagdollAnimator => _ragdoll;
+    public RA2MagnetPoint AttachMagnetPoint => attachMagnetPoint;
+    public GrabbableRagdollBones Bones => _bones;
+    public bool IsInStandingMode => _ragdoll.Handler.IsInStandingMode;
+    public bool IsBeingGrabbed => _grabbedInteractable is not null || _customGrabber is not null;
+    public float LastGrabEnterTime => _lastGrabEnterTime;
+    public float LastGrabExitTime => _lastGrabExitTime;
+
+    public bool CanBeDragged
+    {
+        get => canBeDragged;
+        set
+        {
+            if (canBeDragged == value) return;
+            canBeDragged = value;
+
+            for (int i = 0; i < _allGrabInteractables.Length; i++)
+            {
+                var xrInter = _allGrabInteractables[i];
+                if (xrInter != null)
+                {
+                    xrInter.enabled = value;
+                }
+            }
+
+            if (!canBeDragged)
+            {
+                SetManipulatedByCustomGrabber(null);
+            }
+        }
+    }
+
+    public bool CanFall
+    {
+        get => canFall;
+        set
+        {
+            if (canFall == value) return;
+            canFall = value;
+
+            if (!value && !IsInStandingMode)
+            {
+                SetRagdollStanding();
+            }
+        }
+    }
+
+    public bool AllowAutoGetUp
+    {
+        get => allowAutoGetUp;
+        set => allowAutoGetUp = value;
+    }
+
+    private void Awake()
+    {
+        _ragdoll = GetComponent<RagdollAnimator2>();
+
+        _magnetOrigDragPower = attachMagnetPoint.DragPower;
+        _magnetOrigRotatePower = attachMagnetPoint.RotatePower;
+        _magnetOrigMotionInfluence = attachMagnetPoint.MotionInfluence;
+        _magnetOrigKinematicOnMax = attachMagnetPoint.KinematicOnMax;
+    }
+
+    private IEnumerator Start()
+    {
+        yield return new WaitForEndOfFrame();
+
+        if (!_isInitialized)
+        {
+            Init(_ragdoll.Handler.BaseTransform);
+        }
+    }
+
+    public void Init(Transform baseTransform)
+    {
+        if (_isInitialized) return;
+        _isInitialized = true;
+
+        RagdollAnimator2 ragdoll = _ragdoll;
+        ragdoll.Handler.BaseTransform = baseTransform;
+        if (!ragdoll.Handler.WasInitialized)
+        {
+            ragdoll.Handler.Initialize(ragdoll, gameObject);
+        }
+
+        _allDummyColliders = ragdoll.Handler.User_GetAllDummyColliders().ToArray();
+
+        using (ListPool<GrabbableRagdollBodypartInteractable>.Get(
+                   out List<GrabbableRagdollBodypartInteractable> grabInteractables))
+        {
+            foreach (RagdollBonesChain chain in ragdoll.Handler.Chains)
+            {
+                foreach (RagdollChainBone boneSetup in chain.BoneSetups)
+                {
+                    Rigidbody body = boneSetup.GameRigidbody;
+                    Collider collider = body.GetComponent<Collider>();
+
+                    var xrRagdollGrab =
+                        body.gameObject.AddComponent<GrabbableRagdollBodypartInteractable>();
+                    xrRagdollGrab.Init(this);
+                    xrRagdollGrab.colliders.Clear();
+                    xrRagdollGrab.colliders.Add(collider);
+                    xrRagdollGrab.firstSelectEntered.AddListener(args => OnXRSelectStart(args, xrRagdollGrab));
+                    xrRagdollGrab.lastSelectExited.AddListener(args => OnXRSelectExit(args, xrRagdollGrab));
+                    xrRagdollGrab.activated.AddListener(OnXRActivated);
+
+                    xrRagdollGrab.enabled = canBeDragged;
+                    grabInteractables.Add(xrRagdollGrab);
+
+                    _bones.Add(boneSetup.BoneID, new GrabbableRagdollBones.Bone(boneSetup, xrRagdollGrab));
+                }
+            }
+
+            _allGrabInteractables = grabInteractables.ToArray();
+        }
+
+        {
+            _anchorBone = ragdoll.Handler.GetAnchorBoneController;
+            // _anchorBoneRadius = _anchorBone.MainBoneCollider.bounds.size.MaxComponent() * 0.5f;
+            // _anchorBoneRadius = ((SphereCollider)_anchorBone.MainBoneCollider).radius * 0.5f;
+            _anchorBoneRadius = EvalBoundingSphereRadius(_anchorBone.MainBoneCollider) * 0.5f;
+        }
+
+        _ragdollLod = new RagdollHandler.OptimizationHandler(ragdoll.Handler);
+
+        SetRagdollStanding();
+
+        _hasStarted = true;
+    }
+
+    private void LateUpdate()
+    {
+        if (!_hasStarted)
+            return;
+
+        bool isInStandingMode = IsInStandingMode;
+
+        // Make dragged character loose balance if they have been dragged for substantial distance.
+        if (isInStandingMode && _grabbedInteractable is not null)
+        {
+            float magnetDistSq = EvalMagnetPointAttachDistSq(attachMagnetPoint);
+            // float magnetDistSq = interactable.EvalMagnetDistanceSq();
+            float minDistToFallSq = minDragDistanceToFall * minDragDistanceToFall;
+            if (magnetDistSq > minDistToFallSq)
+            {
+                if (canFall)
+                {
+                    SetRagdollFalling();
+                    onGrabFalling?.Invoke();
+                }
+            }
+        }
+
+        if (!isInStandingMode && allowAutoGetUp)
+        {
+            TryGetUp();
+        }
+
+        // Dynamically turn ragdoll on/off for optimization.
+        {
+            bool shouldActivateRagdoll =
+                IsBeingGrabbed ||
+                !IsInStandingMode ||
+                (characterRenderer.isVisible &&
+                 EvalMainCamDistSq() < LOD_MAX_DIST_TO_CAM * LOD_MAX_DIST_TO_CAM);
+
+            float lodChangeValue = Time.deltaTime * LOD_RAGDOLL_FADE_SPEED;
+            if (shouldActivateRagdoll)
+                _ragdollLod.TurnOnTick(lodChangeValue);
+            else
+                _ragdollLod.TurnOffTick(lodChangeValue);
+        }
+    }
+
+    //AC: Most of the logic ported from RAF_AutoGetUp
+    private void TryGetUp()
+    {
+        if (IsBeingGrabbed)
+            return;
+
+        RagdollHandler handler = _ragdoll.Handler;
+
+        float time = Time.time;
+        float fallingDuration = time - _lastFallTime;
+        if (fallingDuration < minFallingTime)
+            return;
+
+        // The velocity of core bones are in move, so not ready for getup
+        float avgTranslation = handler
+            .User_GetChainBonesAverageTranslation(ERagdollChainType.Core).magnitude;
+        const float noTranslationThreshold = 0.075f;
+        if (avgTranslation > noTranslationThreshold)
+        {
+            _lyingStableDuration = 0f;
+            return;
+        }
+
+        // The velocity of core bones are in move, so not ready for getup
+        const float maxAvgTorqSq = 1f;
+        float coreLowTransFactor = handler.User_CoreLowTranslationFactor(avgTranslation);
+        float chainAngularVelocitySq = handler.User_GetChainAngularVelocity(ERagdollChainType.Core).sqrMagnitude;
+        if (chainAngularVelocitySq >
+            maxAvgTorqSq * coreLowTransFactor * coreLowTransFactor)
+        {
+            _lyingStableDuration = 0f;
+            return;
+        }
+
+        // Let's be in static pose for a small amount of time
+        _lyingStableDuration += Time.deltaTime;
+        if (_lyingStableDuration < minLyingStableTime)
+            return;
+
+        // Check if there's ground below to stand up.
+        if (groundMask != 0)
+        {
+            // RagdollChainBone bone = _anchorBone;
+            // float distance = _anchorBoneRadius + groundCastExtraDist;
+            // Ray ray = new Ray( bone.PhysicalDummyBone.position, Vector3.down);
+            // Physics.Raycast(ray, out RaycastHit groundHit, distance, groundMask, QueryTriggerInteraction.Ignore);
+            bool hasHitGround = TryGroundCastFromHips(out RaycastHit groundHit);
+
+            // if (groundHit.transform is null)
+            if (!hasHitGround)
+            {
+                _lyingStableDuration = 0f;
+                return;
+            }
+        }
+
+        SetRagdollStanding();
+    }
+
+    private bool TryGroundCastFromHips(out RaycastHit groundHit)
+    {
+        RagdollChainBone bone = _anchorBone;
+        float distance = _anchorBoneRadius + groundCastExtraDist;
+        Ray ray = new Ray(bone.PhysicalDummyBone.position, Vector3.down);
+
+        return Physics.Raycast(ray, out groundHit, distance, groundMask, QueryTriggerInteraction.Ignore);
+    }
+
+    void IRagdollAnimator2Receiver.RagdollAnimator2_OnCollisionEnterEvent(RA2BoneCollisionHandler bone,
+        Collision collision)
+    {
+        TryFallOnCollision(bone, collision);
+
+        onBoneCollision?.Invoke(bone, collision);
+    }
+
+    // Make fall on strong collisions.
+    private void TryFallOnCollision(RA2BoneCollisionHandler bone, Collision collision)
+    {
+        if (!allowFallOnCollision)
+            return;
+
+        // // Instantly enable ragdoll.
+        // _ragdollLod.TurnOnTick(float.MaxValue);
+
+        if (!IsInStandingMode)
+            return;
+
+        if (!canFall)
+            return;
+
+        float timeSinceLastGetUp = Time.time - _lastGetUpTime;
+        if (timeSinceLastGetUp < collisionIgnoreAfterGetUp)
+            return;
+
+        Vector3 impulse = collision.impulse;
+        float impactForce = impulse.magnitude;
+        if (impactForce > collisionFallForce)
+        {
+            // Debug.Log("impact force: " + impactForce);
+            SetRagdollFalling();
+            bone.DummyBoneRigidbody.AddForce(impulse * collisionImpulseMultiplier, ForceMode.Impulse);
+        }
+    }
+
+    private void OnXRSelectStart(SelectEnterEventArgs args, GrabbableRagdollBodypartInteractable xrGrab)
+    {
+        if (_grabbedInteractable is not null)
+        {
+            XRInteractionManager xrManager = _grabbedInteractable.interactionManager;
+            xrManager.CancelInteractableSelection((IXRSelectInteractable)_grabbedInteractable);
+            _grabbedInteractable = null;
+        }
+
+        // Make sure to cancel custom grabber.
+        if (_customGrabber is not null)
+        {
+            _customGrabber.ForceRelease(this);
+            _customGrabber = null;
+        }
+
+        _grabbedInteractable = xrGrab;
+
+        Transform draggingTransform = args.interactorObject.GetAttachTransform(xrGrab);
+        InitMagnetPoint(attachMagnetPoint, draggingTransform, xrGrab.RagdollBone.DummyBoneRigidbody.transform);
+
+        HandleGrabBegin();
+    }
+
+    private void OnXRSelectExit(SelectExitEventArgs args, GrabbableRagdollBodypartInteractable xrGrab)
+    {
+        // Alive check.
+        if (this == null)
+        {
+            _grabbedInteractable = null;
+            return;
+        }
+
+        if (_grabbedInteractable is not null && _grabbedInteractable != xrGrab)
+            throw new Exception("Is being grabbed by another grabbable.");
+
+        onBeforeXRSelectExit?.Invoke();
+        _grabbedInteractable = null;
+
+        ResetMagnetPoint(attachMagnetPoint, transform,
+            _magnetOrigDragPower,
+            _magnetOrigRotatePower,
+            _magnetOrigMotionInfluence,
+            _magnetOrigKinematicOnMax);
+
+        HandleGrabEnd();
+    }
+
+    private void OnXRActivated(ActivateEventArgs _)
+    {
+    }
+
+    private void HandleGrabBegin()
+    {
+        if (_customGrabber is null)
+        {
+            _lastGrabEnterTime = Time.time;
+            onGrabBegin?.Invoke();
+        }
+    }
+
+    private void HandleGrabEnd()
+    {
+        _lyingStableDuration = 0f;
+
+        if (_customGrabber is null)
+        {
+            _lastGrabExitTime = Time.time;
+            onGrabEnd?.Invoke();
+        }
+    }
+
+    public void SetRagdollFalling()
+    {
+        if (!IsInStandingMode)
+            return;
+
+        //TODO: AC:
+        // When ragdoll physics is disabled (e.g. due to LOD optimizations), we need to instantly put it into enabled state.
+        // The code below tries to achieve that, however it still has a few related bugs (need more research):
+        //  - Noticeable animation jerk when character transit from standing -> falling.
+        //  - Applying physical force to ragdoll bones has no effect.
+        //    A smooth state blending down deep in the RagdollAnimator might be the reason. 
+        bool isRagdollFullyEnabled = Mathf.Approximately(1f, _ragdoll.Handler.GetTotalBlend());
+        if (!isRagdollFullyEnabled)
+        {
+            // Make sure to instantly match all bones to animation before ragdoll activation.
+            _ragdollLod.TurnOnTick(1f);
+            SyncRagdollWithAnimation(_ragdoll.Handler);
+        }
+
+        _ragdoll.User_SwitchFallState(standing: false);
+        _lastFallTime = Time.time;
+        _lyingStableDuration = 0f;
+
+        onRagdollFalling?.Invoke();
+    }
+
+    public void SetRagdollStanding()
+    {
+        if (IsInStandingMode)
+            return;
+
+        if (TryGroundCastFromHips(out RaycastHit groundHit))
+        {
+            _ragdoll.GetBaseTransform.position = groundHit.point;
+        }
+
+        _ragdoll.User_TransitionToStandingMode(0.5f, 0f, 0.1f, 0.2f);
+        _lastGetUpTime = Time.time;
+
+        onRagdollStanding?.Invoke();
+    }
+
+    private float EvalMainCamDistSq()
+    {
+        if (_mainCamTransform == null)
+        {
+            _mainCamTransform = Camera.main!.transform;
+        }
+
+        Vector3 camPosNorm = _mainCamTransform.position;
+        camPosNorm.y = 0;
+
+        Vector3 ragdollPosNorm = _ragdoll.transform.position;
+        ragdollPosNorm.y = 0;
+
+        return (camPosNorm - ragdollPosNorm).sqrMagnitude;
+    }
+
+    public void TeleportInstantly(Vector3 targetPosition)
+    {
+        RagdollAnimator2 ragdoll = _ragdoll;
+        if (ragdoll.IsInFallingOrSleepMode)
+        {
+            Vector3 anchorBottom = ragdoll.User_GetPosition_AnchorBottom();
+            Vector3 positionDelta = targetPosition - anchorBottom;
+            ragdoll.Handler.CallOnAllRagdollBones(bone =>
+            {
+                Rigidbody body = bone.GameRigidbody;
+                if (!body.isKinematic)
+                {
+                    body.linearVelocity = Vector3.zero;
+                    body.angularVelocity = Vector3.zero;
+                }
+
+                body.MovePosition(body.position + positionDelta);
+            });
+        }
+        else
+        {
+            // This doesn't reliably work for when ragdoll is falling.
+            // So we use our custom bone move logic.
+            ragdoll.User_Teleport(targetPosition);
+        }
+    }
+
+    //TODO: This method is specific to each character's animator and should be moved to an appropriate place.
+    public void SetPanicFallMotion(bool isPanic)
+    {
+        float animVal = isPanic ? 1f : 0f;
+        _ragdoll.Mecanim.SetFloat("Fall Motion", animVal);
+    }
+
+    /// Configures all ragdoll bones to ignore collisions with
+    /// any colliders contained in the <paramref name="root"/>'s hierarchy.
+    /// <seealso cref="RagdollHandler.User_FindAllCollidersInsideAndIgnoreTheirCollisionWithDummyColliders"/>
+    [SuppressMessage("ReSharper", "AccessToDisposedClosure")]
+    public void IgnoreColliders(Transform root, bool ignore = true)
+    {
+        // Make sure all the colliders are still alive.
+        if (_allDummyColliders.Any(collider => collider == null))
+            return;
+
+        List<Collider> foundColliders = tmpColliderList;
+
+        root.ExecuteRecursively(transform =>
+        {
+            transform.GetComponents<Collider>(foundColliders);
+            if (foundColliders.Count == 0)
+                return;
+
+            Collider[] dummyColliders = _allDummyColliders;
+            for (int i = 0; i < foundColliders.Count; i++)
+            {
+                Collider foundCollider = foundColliders[i];
+                for (int j = 0; j < dummyColliders.Length; j++)
+                {
+                    Collider dummyCollider = dummyColliders[j];
+                    Physics.IgnoreCollision(foundCollider, dummyCollider, ignore);
+                }
+            }
+        });
+    }
+
+    private Coroutine forceActiveRagdollRoutine = null;
+
+    public void ForceActiveRagdoll(float resetTimer = 5f)
+    {
+        Assert.IsTrue(resetTimer > 0f, "Reset timer must be a positive number.");
+
+        _forceActiveRagdoll = true;
+
+        if (forceActiveRagdollRoutine is not null) StopCoroutine(forceActiveRagdollRoutine);
+        forceActiveRagdollRoutine = StartCoroutine(Routine());
+
+        IEnumerator Routine()
+        {
+            yield return new WaitForSeconds(resetTimer);
+            _forceActiveRagdoll = false;
+            forceActiveRagdollRoutine = null;
+        }
+    }
+
+    private static void SyncRagdollWithAnimation(RagdollHandler handler)
+    {
+        handler.CallOnAllRagdollBones(b =>
+        {
+            b.BoneProcessor.ResetPoseParameters();
+            b.GameRigidbody.rotation = b.SourceBone.rotation;
+            b.GameRigidbody.transform.rotation = b.SourceBone.rotation;
+            b.GameRigidbody.position = b.SourceBone.position;
+            b.GameRigidbody.transform.position = b.SourceBone.position;
+        });
+        handler.CallOnAllInBetweenBones(b => { b.DummyBone.rotation = b.SourceBone.rotation; });
+    }
+
+    private static float EvalBoundingSphereRadius(Collider collider)
+    {
+        if (collider is SphereCollider sphere)
+            return sphere.radius;
+
+        if (collider is CapsuleCollider capsule)
+        {
+            float halfHeight = capsule.height * 0.5f;
+            float r = capsule.radius;
+            return Mathf.Sqrt(halfHeight * halfHeight + r * r);
+        }
+
+        Debug.LogWarning("Unexpected collider type. Fallback to universal radius computation method.", collider);
+        return collider.bounds.size.MaxComponent() * 0.5f;
+    }
+
+    #region RA2MagnetPoint grabbing attachment.
+
+    private static void InitMagnetPoint(RA2MagnetPoint magnetPoint, Transform draggingTransform,
+        Transform boneTransform)
+    {
+        GameObject magnetGo = magnetPoint.gameObject;
+        magnetGo.transform.SetParent(draggingTransform, false);
+        magnetPoint.OriginOffset = magnetPoint.transform.InverseTransformPoint(draggingTransform.position);
+        magnetPoint.RotationOffset = (boneTransform.rotation * Quaternion.Inverse(draggingTransform.rotation));
+        magnetPoint.ToMove = boneTransform;
+
+        magnetPoint.gameObject.SetActive(true);
+    }
+
+    private static void ResetMagnetPoint(RA2MagnetPoint magnetPoint, Transform origTransform,
+        float origDragPower,
+        float origRotatePower,
+        float origMotionInfluence,
+        bool origKinematicOnMax)
+    {
+        GameObject magnetGo = magnetPoint.gameObject;
+        magnetGo.SetActive(false);
+
+        if (!origTransform)
+        {
+            magnetGo.transform.SetParent(origTransform, false);
+        }
+
+        magnetPoint.ToMove = null;
+
+        magnetPoint.DragPower = origDragPower;
+        magnetPoint.RotatePower = origRotatePower;
+        magnetPoint.MotionInfluence = origMotionInfluence;
+        magnetPoint.KinematicOnMax = origKinematicOnMax;
+    }
+
+    private static float EvalMagnetPointAttachDistSq(RA2MagnetPoint magnetPoint)
+    {
+        //TODO: Count in the offset (magnetPoint.OriginOffset and magnetPoint.RotationOffset).
+        return (magnetPoint.transform.position - magnetPoint.ToMove.position).sqrMagnitude;
+    }
+
+    #endregion
+
+    #region Custom grabbers
+
+    public ICustomRagdollGrabber CustomGrabber => _customGrabber;
+
+    public void SetManipulatedByCustomGrabber([CanBeNull] ICustomRagdollGrabber grabber)
+    {
+        if (ReferenceEquals(_customGrabber, grabber))
+            return;
+
+        bool wasGrabbed = false;
+        bool wasGrabAdded = false;
+
+        // Cancel previous custom grabber (if any).
+        if (_customGrabber is not null)
+        {
+            _customGrabber.ForceRelease(this);
+            _customGrabber = null;
+            wasGrabbed = true;
+        }
+
+        if (grabber is not null)
+        {
+            _customGrabber = grabber;
+            wasGrabAdded = true;
+
+            // Make sure to cancel XR selection. 
+            if (_grabbedInteractable is not null)
+            {
+                _grabbedInteractable.interactionManager.CancelInteractableSelection(
+                    (IXRSelectInteractable)_grabbedInteractable);
+                _grabbedInteractable = null;
+                wasGrabbed = true;
+            }
+        }
+
+        // Recognize grab enter/exit events.
+        if (!wasGrabbed && wasGrabAdded)
+        {
+            _lastGrabEnterTime = Time.time;
+            onGrabBegin?.Invoke();
+        }
+        else if (wasGrabbed && !wasGrabAdded)
+        {
+            _lastGrabExitTime = Time.time;
+            onGrabEnd?.Invoke();
+        }
+    }
+
+    // For now simply a marker interface that denotes anything that implements its own way of grabbing the ragdoll.
+    public interface ICustomRagdollGrabber
+    {
+        void ForceRelease(GrabbableRagdoll ragdoll);
+    }
+
+    #endregion
+}
