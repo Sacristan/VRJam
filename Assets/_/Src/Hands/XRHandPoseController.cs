@@ -47,6 +47,7 @@ public class XRHandPoseController : MonoBehaviour
 
     public void OnSelectExiting()
     {
+        
         ClearCurrentlyHeldObject();
     }
 

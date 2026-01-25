@@ -3,9 +3,30 @@ using FIMSpace.FProceduralAnimation;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
-public class GrabbableRagdollBodypart : XRGrabInteractable
+public class GrabPointData
 {
+    public readonly Transform RigidbodyPoint;
+    public Transform InteractorOffsetPoint;
+
+    public GrabPointData(Transform rigidbodyPoint, Transform interactorOffsetPoint)
+    {
+        RigidbodyPoint = rigidbodyPoint;
+        InteractorOffsetPoint = interactorOffsetPoint;
+    }
+
+    public void DoDestroy()
+    {
+        Object.Destroy(RigidbodyPoint.gameObject);
+        Object.Destroy(InteractorOffsetPoint.gameObject);
+    }
+}
+
+public class GrabbableRagdollBodypart : XRBaseInteractable
+{
+    [SerializeField] private float detachDist = 1f;
+    
     private GrabbableRagdoll _ragdoll;
     private RA2BoneCollisionHandler _ragdollBone;
 
@@ -14,56 +35,152 @@ public class GrabbableRagdollBodypart : XRGrabInteractable
     public RagdollChainBone ChainBone { get; private set; }
     public bool Selected => isSelected;
 
+    private List<UnityEngine.XR.Interaction.Toolkit.Interactors.IXRSelectInteractor> _currentInteractors = new();
+    private readonly Dictionary<IXRInteractor, GrabPointData> _grabPoints = new();
+    
     public void Init(GrabbableRagdoll ragdoll, RagdollChainBone chainBone)
     {
         _ragdoll = ragdoll;
+        ChainBone = chainBone;
+
+        ApplyBoneSettings();
 
         colliders.Clear();
-
-        List<RagdollChainBone.ColliderSetup> boneColliders = chainBone.Colliders;
-
-        foreach (var t in boneColliders)
+        foreach (var t in chainBone.Colliders)
         {
             colliders.Add(t.GameCollider);
         }
 
+        _ragdollBone = GetComponentInChildren<RA2BoneCollisionHandler>();
 
         selectMode = InteractableSelectMode.Multiple;
 
-        // ApplyBoneSettings();
-
-        _ragdollBone = GetComponentInChildren<RA2BoneCollisionHandler>();
         if (_ragdollBone is null)
         {
             Debug.LogError(
-                $"Cannot find a ${nameof(RA2BoneCollisionHandler)} component for ragdoll dummy bone: ${name}", this);
+                $"Cannot find a {nameof(RA2BoneCollisionHandler)} component for ragdoll dummy bone: {name}", this);
         }
     }
 
     protected override void OnSelectEntered(SelectEnterEventArgs args)
     {
         base.OnSelectEntered(args);
-        Debug.Log($"{nameof(OnSelectEntered)}", gameObject);
-
-        _ragdoll.OnGrabbed(this);
         
-        Debug.Break();
+        Debug.Log($"{nameof(OnSelectEntered)}", gameObject);
+        
+        bool handFound = XRPlayer.Instance.Hands.FindHandWithInteractor(
+            args.interactorObject, out XRPlayerHand hand
+        );
+        if (!handFound) return;
+
+        AttachHandToBone(hand, out Vector3 attachPos);
+        SetupGrabPoint(args.interactorObject, attachPos);
+        _ragdoll.OnGrabbed(this);
     }
 
     protected override void OnSelectExited(SelectExitEventArgs args)
     {
         base.OnSelectExited(args);
         Debug.Log($"{nameof(OnSelectExited)}", gameObject);
-
+        
+        DestroyGrabPoint(args.interactorObject);
+        
+        if (!Selected) //can still be selected with 2nd hand
+        {
+            _ragdoll.ReleaseThisBodypart(this);
+        }
+        
+        ForceDrop((XRBaseInteractor)args.interactorObject);
         _ragdoll.OnReleased(this);
     }
+
+    private void AttachHandToBone(XRPlayerHand hand, out Vector3 attachPosition)
+    {
+        HandGraphics handGraphics = hand.PoseController.HandGraphics;
+        handGraphics.SetParent(ChainBone.SourceBone);
+
+        attachPosition = FindClosestColliderPoint(handGraphics.Center.position);
+        handGraphics.MoveCenterTo(attachPosition);
+    }
+    
+    private void SetupGrabPoint(IXRSelectInteractor interactor, Vector3 attachPosition)
+    {
+        if (!interactor.TryGetTransform(out Transform interactorTransform))
+        {
+            return;
+        }
+
+        GameObject rigidbodyGrabPoint = new GameObject("RigidbodyGrabPoint-TEMP");
+        Transform rigidbodyPointTransform = rigidbodyGrabPoint.transform;
+        rigidbodyPointTransform.SetParent(ChainBone.SourceBone);
+        rigidbodyPointTransform.position = attachPosition;
+
+        GameObject interactorOffsetPoint = new GameObject("InteractorOffsetPoint-TEMP");
+        Transform interactorPointTransform = interactorOffsetPoint.transform;
+        interactorPointTransform.SetParent(interactorTransform);
+        interactorPointTransform.position = attachPosition;
+
+        _grabPoints.Add(interactor, new GrabPointData(rigidbodyPointTransform, interactorPointTransform));
+    }
+    
+    private void DestroyGrabPoint(IXRInteractor interactor)
+    {
+        if (_grabPoints.TryGetValue(interactor, out GrabPointData grabPoint))
+        {
+            grabPoint.DoDestroy();
+            _grabPoints.Remove(interactor);
+        }
+    }
+
+    private Vector3 FindClosestColliderPoint(Vector3 handPoint)
+    {
+        List<RagdollChainBone.ColliderSetup> boneColliders = ChainBone.Colliders;
+        if (boneColliders.Count == 0)
+        {
+            return handPoint;
+        }
+
+        Vector3 closestPoint = Vector3.positiveInfinity;
+        float minSqrDist = float.MaxValue;
+
+        for (int i = 0, iSize = boneColliders.Count; i < iSize; i++)
+        {
+            Vector3 closestPointOnCollider = boneColliders[i].GameCollider.ClosestPoint(handPoint);
+            float sqrDis = Vector3.SqrMagnitude(handPoint - closestPointOnCollider);
+            if (sqrDis < minSqrDist)
+            {
+                minSqrDist = sqrDis;
+                closestPoint = closestPointOnCollider;
+            }
+        }
+
+        return closestPoint;
+    }
+
 
     void ApplyBoneSettings()
     {
         ConfigurableJoint boneJoint = ChainBone.Joint;
+        if (boneJoint == null)
+        {
+            Debug.LogWarning("No joint found on bone; skipping bone settings.", this);
+            return;
+        }
+
+        // Optional: you could set joint drive parameters here if needed
         // JointDrive slerpDrive = boneJoint.slerpDrive;
-        // slerpDrive.positionSpring = config.driveSpring;
-        // slerpDrive.positionDamper = config.driveDamper;
+        // slerpDrive.positionSpring = 500;
+        // slerpDrive.positionDamper = 50;
         // boneJoint.slerpDrive = slerpDrive;
+    }
+    
+    public static void ForceDrop(XRBaseInteractor baseInteractor)
+    {
+        ForceDrop(baseInteractor.interactionManager, baseInteractor);
+    }
+
+    public static void ForceDrop(XRInteractionManager interactionManager, IXRSelectInteractor interactor)
+    {
+        interactionManager.CancelInteractorSelection(interactor);
     }
 }

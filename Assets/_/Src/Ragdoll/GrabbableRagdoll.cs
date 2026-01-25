@@ -64,7 +64,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     private Collider[] _allDummyColliders;
     private GrabbableRagdollBodypart[] _allGrabInteractables;
-    private readonly List<GrabbableRagdollBodypart> _grabbed = new();
+    private readonly List<GrabbableRagdollBodypart> _grabbedBodyparts = new();
 
     private RagdollAnimator2 _ragdoll;
     private RagdollHandler.OptimizationHandler _ragdollLod;
@@ -86,7 +86,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     public RagdollAnimator2 RagdollAnimator => _ragdoll;
     public GrabbableRagdollBones Bones => _bones;
     public bool IsInStandingMode => _ragdoll.Handler.IsInStandingMode;
-    public bool IsBeingGrabbed => _grabbed is not null && _grabbed.Any();
+    public bool IsBeingGrabbed => _grabbedBodyparts is not null && _grabbedBodyparts.Any();
     public float LastGrabEnterTime => _lastGrabEnterTime;
     public float LastGrabExitTime => _lastGrabExitTime;
 
@@ -204,12 +204,16 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     
     public void OnGrabbed(GrabbableRagdollBodypart ragdollBodypart)
     {
-        _grabbed.Add(ragdollBodypart);
+        _grabbedBodyparts.Add(ragdollBodypart);
     }
 
     public void OnReleased(GrabbableRagdollBodypart ragdollBodypart)
     {
-        _grabbed.Remove(ragdollBodypart);
+    }
+    
+    public void ReleaseThisBodypart(GrabbableRagdollBodypart ragdollBodypart)
+    {
+        _grabbedBodyparts.Remove(ragdollBodypart);
     }
 
     private void LateUpdate()
@@ -587,4 +591,5 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     // }
     //
     // #endregion
+  
 }

@@ -12,6 +12,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: HandRight
       objectReference: {fileID: 0}
+    - target: {fileID: 1506123386444309840, guid: 18d9c596f394ef94c9a2cc6bf75fc8b9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 1506123386444309840, guid: 18d9c596f394ef94c9a2cc6bf75fc8b9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.04
+      objectReference: {fileID: 0}
     - target: {fileID: 6438278081455723655, guid: 18d9c596f394ef94c9a2cc6bf75fc8b9, type: 3}
       propertyPath: fingersDescriptors.Array.data[0].parent
       value: 
