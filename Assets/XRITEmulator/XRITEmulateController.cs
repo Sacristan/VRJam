@@ -121,8 +121,8 @@ public class XRITEmulateController : MonoBehaviour
 
         if (hasFocus)
             InitializeController();
-        else
-            DestroyControllerDevice();
+        // else
+        //     DestroyControllerDevice();
     }
 
     private void InitializeController()

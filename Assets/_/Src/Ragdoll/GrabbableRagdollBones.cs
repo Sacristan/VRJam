@@ -17,14 +17,14 @@ public class GrabbableRagdollBones
     public class Bone
     {
         private readonly RagdollChainBone _chainBone;
-        private readonly GrabbableRagdollBodypartInteractable _interactable;
+        private readonly GrabbableRagdollBodypart _interactable;
         private readonly Rigidbody _rigidbody;
 
         public RagdollChainBone ChainBone => _chainBone;
-        public GrabbableRagdollBodypartInteractable Interactable => _interactable;
+        public GrabbableRagdollBodypart Interactable => _interactable;
         public Rigidbody RigidBody => _rigidbody;
 
-        public Bone(RagdollChainBone chainBone, GrabbableRagdollBodypartInteractable interactable)
+        public Bone(RagdollChainBone chainBone, GrabbableRagdollBodypart interactable)
         {
             _chainBone = chainBone;
             _interactable = interactable;

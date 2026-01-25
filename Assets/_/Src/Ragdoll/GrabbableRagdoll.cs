@@ -12,7 +12,6 @@ using UnityEngine.Pool;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-//TODO: Looks like the magnet point rotation is not matching the grabbing interactor. Check on it.
 [RequireComponent(typeof(RagdollAnimator2))]
 public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 {
@@ -32,7 +31,6 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     public event OnBoneCollision onBoneCollision;
 
     [SerializeField] public Renderer characterRenderer;
-    [SerializeField] private RA2MagnetPoint attachMagnetPoint;
 
     [Space] [SerializeField] private bool canBeDragged = true;
     [SerializeField] private bool allowFallOnCollision = false;
@@ -65,10 +63,8 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     private bool _magnetOrigKinematicOnMax;
 
     private Collider[] _allDummyColliders;
-    private GrabbableRagdollBodypartInteractable[] _allGrabInteractables;
-    private GrabbableRagdollBodypartInteractable _grabbedInteractable = null;
-
-    private ICustomRagdollGrabber _customGrabber = null;
+    private GrabbableRagdollBodypart[] _allGrabInteractables;
+    private readonly List<GrabbableRagdollBodypart> _grabbed = new();
 
     private RagdollAnimator2 _ragdoll;
     private RagdollHandler.OptimizationHandler _ragdollLod;
@@ -88,10 +84,9 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
     private bool _forceActiveRagdoll = false;
 
     public RagdollAnimator2 RagdollAnimator => _ragdoll;
-    public RA2MagnetPoint AttachMagnetPoint => attachMagnetPoint;
     public GrabbableRagdollBones Bones => _bones;
     public bool IsInStandingMode => _ragdoll.Handler.IsInStandingMode;
-    public bool IsBeingGrabbed => _grabbedInteractable is not null || _customGrabber is not null;
+    public bool IsBeingGrabbed => _grabbed is not null && _grabbed.Any();
     public float LastGrabEnterTime => _lastGrabEnterTime;
     public float LastGrabExitTime => _lastGrabExitTime;
 
@@ -114,7 +109,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
             if (!canBeDragged)
             {
-                SetManipulatedByCustomGrabber(null);
+                // SetManipulatedByCustomGrabber(null);
             }
         }
     }
@@ -140,18 +135,10 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         set => allowAutoGetUp = value;
     }
 
-    private void Awake()
+    private IEnumerator Start()
     {
         _ragdoll = GetComponent<RagdollAnimator2>();
 
-        _magnetOrigDragPower = attachMagnetPoint.DragPower;
-        _magnetOrigRotatePower = attachMagnetPoint.RotatePower;
-        _magnetOrigMotionInfluence = attachMagnetPoint.MotionInfluence;
-        _magnetOrigKinematicOnMax = attachMagnetPoint.KinematicOnMax;
-    }
-
-    private IEnumerator Start()
-    {
         yield return new WaitForEndOfFrame();
 
         if (!_isInitialized)
@@ -172,35 +159,31 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
             ragdoll.Handler.Initialize(ragdoll, gameObject);
         }
 
+        var dummyRef = ragdoll.Handler.DummyReference;
+        dummyRef.transform.parent = transform.parent;
+
         _allDummyColliders = ragdoll.Handler.User_GetAllDummyColliders().ToArray();
 
-        using (ListPool<GrabbableRagdollBodypartInteractable>.Get(
-                   out List<GrabbableRagdollBodypartInteractable> grabInteractables))
+        using (ListPool<GrabbableRagdollBodypart>.Get(
+                   out List<GrabbableRagdollBodypart> grabbableRagdollBodyparts))
         {
             foreach (RagdollBonesChain chain in ragdoll.Handler.Chains)
             {
                 foreach (RagdollChainBone boneSetup in chain.BoneSetups)
                 {
                     Rigidbody body = boneSetup.GameRigidbody;
-                    Collider collider = body.GetComponent<Collider>();
 
                     var xrRagdollGrab =
-                        body.gameObject.AddComponent<GrabbableRagdollBodypartInteractable>();
-                    xrRagdollGrab.Init(this);
-                    xrRagdollGrab.colliders.Clear();
-                    xrRagdollGrab.colliders.Add(collider);
-                    xrRagdollGrab.firstSelectEntered.AddListener(args => OnXRSelectStart(args, xrRagdollGrab));
-                    xrRagdollGrab.lastSelectExited.AddListener(args => OnXRSelectExit(args, xrRagdollGrab));
-                    xrRagdollGrab.activated.AddListener(OnXRActivated);
+                        body.gameObject.AddComponent<GrabbableRagdollBodypart>();
 
-                    xrRagdollGrab.enabled = canBeDragged;
-                    grabInteractables.Add(xrRagdollGrab);
+                    xrRagdollGrab.Init(this, boneSetup);
+                    grabbableRagdollBodyparts.Add(xrRagdollGrab);
 
                     _bones.Add(boneSetup.BoneID, new GrabbableRagdollBones.Bone(boneSetup, xrRagdollGrab));
                 }
             }
 
-            _allGrabInteractables = grabInteractables.ToArray();
+            _allGrabInteractables = grabbableRagdollBodyparts.ToArray();
         }
 
         {
@@ -217,6 +200,18 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         _hasStarted = true;
     }
 
+    
+    
+    public void OnGrabbed(GrabbableRagdollBodypart ragdollBodypart)
+    {
+        _grabbed.Add(ragdollBodypart);
+    }
+
+    public void OnReleased(GrabbableRagdollBodypart ragdollBodypart)
+    {
+        _grabbed.Remove(ragdollBodypart);
+    }
+
     private void LateUpdate()
     {
         if (!_hasStarted)
@@ -225,20 +220,20 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         bool isInStandingMode = IsInStandingMode;
 
         // Make dragged character loose balance if they have been dragged for substantial distance.
-        if (isInStandingMode && _grabbedInteractable is not null)
-        {
-            float magnetDistSq = EvalMagnetPointAttachDistSq(attachMagnetPoint);
-            // float magnetDistSq = interactable.EvalMagnetDistanceSq();
-            float minDistToFallSq = minDragDistanceToFall * minDragDistanceToFall;
-            if (magnetDistSq > minDistToFallSq)
-            {
-                if (canFall)
-                {
-                    SetRagdollFalling();
-                    onGrabFalling?.Invoke();
-                }
-            }
-        }
+        // if (isInStandingMode && _grabbed is not null)
+        // {
+        //     float magnetDistSq = EvalMagnetPointAttachDistSq(attachMagnetPoint);
+        //     // float magnetDistSq = interactable.EvalMagnetDistanceSq();
+        //     float minDistToFallSq = minDragDistanceToFall * minDragDistanceToFall;
+        //     if (magnetDistSq > minDistToFallSq)
+        //     {
+        //         if (canFall)
+        //         {
+        //             SetRagdollFalling();
+        //             onGrabFalling?.Invoke();
+        //         }
+        //     }
+        // }
 
         if (!isInStandingMode && allowAutoGetUp)
         {
@@ -261,7 +256,6 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         }
     }
 
-    //AC: Most of the logic ported from RAF_AutoGetUp
     private void TryGetUp()
     {
         if (IsBeingGrabbed)
@@ -363,78 +357,6 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
             // Debug.Log("impact force: " + impactForce);
             SetRagdollFalling();
             bone.DummyBoneRigidbody.AddForce(impulse * collisionImpulseMultiplier, ForceMode.Impulse);
-        }
-    }
-
-    private void OnXRSelectStart(SelectEnterEventArgs args, GrabbableRagdollBodypartInteractable xrGrab)
-    {
-        if (_grabbedInteractable is not null)
-        {
-            XRInteractionManager xrManager = _grabbedInteractable.interactionManager;
-            xrManager.CancelInteractableSelection((IXRSelectInteractable)_grabbedInteractable);
-            _grabbedInteractable = null;
-        }
-
-        // Make sure to cancel custom grabber.
-        if (_customGrabber is not null)
-        {
-            _customGrabber.ForceRelease(this);
-            _customGrabber = null;
-        }
-
-        _grabbedInteractable = xrGrab;
-
-        Transform draggingTransform = args.interactorObject.GetAttachTransform(xrGrab);
-        InitMagnetPoint(attachMagnetPoint, draggingTransform, xrGrab.RagdollBone.DummyBoneRigidbody.transform);
-
-        HandleGrabBegin();
-    }
-
-    private void OnXRSelectExit(SelectExitEventArgs args, GrabbableRagdollBodypartInteractable xrGrab)
-    {
-        // Alive check.
-        if (this == null)
-        {
-            _grabbedInteractable = null;
-            return;
-        }
-
-        if (_grabbedInteractable is not null && _grabbedInteractable != xrGrab)
-            throw new Exception("Is being grabbed by another grabbable.");
-
-        onBeforeXRSelectExit?.Invoke();
-        _grabbedInteractable = null;
-
-        ResetMagnetPoint(attachMagnetPoint, transform,
-            _magnetOrigDragPower,
-            _magnetOrigRotatePower,
-            _magnetOrigMotionInfluence,
-            _magnetOrigKinematicOnMax);
-
-        HandleGrabEnd();
-    }
-
-    private void OnXRActivated(ActivateEventArgs _)
-    {
-    }
-
-    private void HandleGrabBegin()
-    {
-        if (_customGrabber is null)
-        {
-            _lastGrabEnterTime = Time.time;
-            onGrabBegin?.Invoke();
-        }
-    }
-
-    private void HandleGrabEnd()
-    {
-        _lyingStableDuration = 0f;
-
-        if (_customGrabber is null)
-        {
-            _lastGrabExitTime = Time.time;
-            onGrabEnd?.Invoke();
         }
     }
 
@@ -608,104 +530,61 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         Debug.LogWarning("Unexpected collider type. Fallback to universal radius computation method.", collider);
         return collider.bounds.size.MaxComponent() * 0.5f;
     }
+    
 
-    #region RA2MagnetPoint grabbing attachment.
-
-    private static void InitMagnetPoint(RA2MagnetPoint magnetPoint, Transform draggingTransform,
-        Transform boneTransform)
-    {
-        GameObject magnetGo = magnetPoint.gameObject;
-        magnetGo.transform.SetParent(draggingTransform, false);
-        magnetPoint.OriginOffset = magnetPoint.transform.InverseTransformPoint(draggingTransform.position);
-        magnetPoint.RotationOffset = (boneTransform.rotation * Quaternion.Inverse(draggingTransform.rotation));
-        magnetPoint.ToMove = boneTransform;
-
-        magnetPoint.gameObject.SetActive(true);
-    }
-
-    private static void ResetMagnetPoint(RA2MagnetPoint magnetPoint, Transform origTransform,
-        float origDragPower,
-        float origRotatePower,
-        float origMotionInfluence,
-        bool origKinematicOnMax)
-    {
-        GameObject magnetGo = magnetPoint.gameObject;
-        magnetGo.SetActive(false);
-
-        if (!origTransform)
-        {
-            magnetGo.transform.SetParent(origTransform, false);
-        }
-
-        magnetPoint.ToMove = null;
-
-        magnetPoint.DragPower = origDragPower;
-        magnetPoint.RotatePower = origRotatePower;
-        magnetPoint.MotionInfluence = origMotionInfluence;
-        magnetPoint.KinematicOnMax = origKinematicOnMax;
-    }
-
-    private static float EvalMagnetPointAttachDistSq(RA2MagnetPoint magnetPoint)
-    {
-        //TODO: Count in the offset (magnetPoint.OriginOffset and magnetPoint.RotationOffset).
-        return (magnetPoint.transform.position - magnetPoint.ToMove.position).sqrMagnitude;
-    }
-
-    #endregion
-
-    #region Custom grabbers
-
-    public ICustomRagdollGrabber CustomGrabber => _customGrabber;
-
-    public void SetManipulatedByCustomGrabber([CanBeNull] ICustomRagdollGrabber grabber)
-    {
-        if (ReferenceEquals(_customGrabber, grabber))
-            return;
-
-        bool wasGrabbed = false;
-        bool wasGrabAdded = false;
-
-        // Cancel previous custom grabber (if any).
-        if (_customGrabber is not null)
-        {
-            _customGrabber.ForceRelease(this);
-            _customGrabber = null;
-            wasGrabbed = true;
-        }
-
-        if (grabber is not null)
-        {
-            _customGrabber = grabber;
-            wasGrabAdded = true;
-
-            // Make sure to cancel XR selection. 
-            if (_grabbedInteractable is not null)
-            {
-                _grabbedInteractable.interactionManager.CancelInteractableSelection(
-                    (IXRSelectInteractable)_grabbedInteractable);
-                _grabbedInteractable = null;
-                wasGrabbed = true;
-            }
-        }
-
-        // Recognize grab enter/exit events.
-        if (!wasGrabbed && wasGrabAdded)
-        {
-            _lastGrabEnterTime = Time.time;
-            onGrabBegin?.Invoke();
-        }
-        else if (wasGrabbed && !wasGrabAdded)
-        {
-            _lastGrabExitTime = Time.time;
-            onGrabEnd?.Invoke();
-        }
-    }
-
-    // For now simply a marker interface that denotes anything that implements its own way of grabbing the ragdoll.
-    public interface ICustomRagdollGrabber
-    {
-        void ForceRelease(GrabbableRagdoll ragdoll);
-    }
-
-    #endregion
+    // #region Custom grabbers
+    //
+    // public ICustomRagdollGrabber CustomGrabber => _customGrabber;
+    //
+    // public void SetManipulatedByCustomGrabber([CanBeNull] ICustomRagdollGrabber grabber)
+    // {
+    //     if (ReferenceEquals(_customGrabber, grabber))
+    //         return;
+    //
+    //     bool wasGrabbed = false;
+    //     bool wasGrabAdded = false;
+    //
+    //     // Cancel previous custom grabber (if any).
+    //     if (_customGrabber is not null)
+    //     {
+    //         _customGrabber.ForceRelease(this);
+    //         _customGrabber = null;
+    //         wasGrabbed = true;
+    //     }
+    //
+    //     if (grabber is not null)
+    //     {
+    //         _customGrabber = grabber;
+    //         wasGrabAdded = true;
+    //
+    //         // Make sure to cancel XR selection. 
+    //         if (_grabbed is not null)
+    //         {
+    //             _grabbed.interactionManager.CancelInteractableSelection(
+    //                 (IXRSelectInteractable)_grabbed);
+    //             _grabbed = null;
+    //             wasGrabbed = true;
+    //         }
+    //     }
+    //
+    //     // Recognize grab enter/exit events.
+    //     if (!wasGrabbed && wasGrabAdded)
+    //     {
+    //         _lastGrabEnterTime = Time.time;
+    //         onGrabBegin?.Invoke();
+    //     }
+    //     else if (wasGrabbed && !wasGrabAdded)
+    //     {
+    //         _lastGrabExitTime = Time.time;
+    //         onGrabEnd?.Invoke();
+    //     }
+    // }
+    //
+    // // For now simply a marker interface that denotes anything that implements its own way of grabbing the ragdoll.
+    // public interface ICustomRagdollGrabber
+    // {
+    //     void ForceRelease(GrabbableRagdoll ragdoll);
+    // }
+    //
+    // #endregion
 }

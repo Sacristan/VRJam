@@ -17,8 +17,7 @@ MonoBehaviour:
   rightControllerPosition: {x: 0.15, y: -0.15, z: 0.3}
   rightControllerRotation: {x: 0, y: 10, z: 0}
   movementSpeed: 2
-  verticalMoveSpeed: 0.1
-  horizontalSensitivity: 0.2
-  verticalSensitivity: 0.2
-  captureCursor: 1
-  maxVerticalAngle: 80
+  adjustHeightSpeed: 1
+  sensitivity: 0.2
+  showCursor: 1
+  verticalAngleTreshold: 80

@@ -2017,6 +2017,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: canFall
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: characterRenderer
       value: 
       objectReference: {fileID: 20978583}
@@ -2030,7 +2034,15 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: e3a163676711fd242a00688fd44d1de9, type: 2}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._EditorCategory
-      value: 4
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: handler._EditorMotionCategory
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: handler._Editor_SelectedChain
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler.ExtraFeatures.Array.size

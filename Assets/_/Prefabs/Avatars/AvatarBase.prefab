@@ -1,58 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &1798844815923851213
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5789408766884410386}
-  - component: {fileID: 4596989485934855783}
-  m_Layer: 0
-  m_Name: GrabMagnet
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5789408766884410386
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1798844815923851213}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4431535555495526143}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4596989485934855783
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1798844815923851213}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d011d877c2c26242b94306f89d6c692, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ObjectWithRagdollAnimator: {fileID: 8109293532997639107}
-  ToMove: {fileID: 0}
-  DragPower: 0.35
-  RotatePower: 1
-  MotionInfluence: 1
-  KinematicOnMax: 1
-  RestoreOnDestroy: 0
-  OriginOffset: {x: 0, y: 0, z: 0}
-  RotationOffset: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3788664862322140044
 GameObject:
   m_ObjectHideFlags: 0
@@ -83,8 +30,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5789408766884410386}
+  m_Children: []
   m_Father: {fileID: 4507839591358566794}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6234913458126536414
@@ -198,7 +144,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterRenderer: {fileID: 0}
-  attachMagnetPoint: {fileID: 4596989485934855783}
   canBeDragged: 1
   allowFallOnCollision: 0
   canFall: 1
