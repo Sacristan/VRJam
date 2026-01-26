@@ -10,6 +10,12 @@ public class GrabPointData
     public readonly Transform RigidbodyPoint;
     public readonly Transform InteractorOffsetPoint;
 
+    public Vector3 lastPos;
+    public Quaternion lastRot;
+    public Vector3 linVel;
+    public Vector3 angVel;
+    public bool hasLast;
+
     public GrabPointData(Transform rigidbodyPoint, Transform interactorOffsetPoint)
     {
         RigidbodyPoint = rigidbodyPoint;
@@ -53,7 +59,50 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         if (_grabPoints.Count == 0) return;
 
         if (Rigidbody == null || Rigidbody.isKinematic) return;
+        HandleThrowing();
+        HandleGrabbedJoints();
+    }
 
+    void HandleThrowing()
+    {
+        float dt = Time.fixedDeltaTime;
+
+        foreach (var kv in _grabPoints)
+        {
+            var gp = kv.Value;
+            if (gp?.InteractorOffsetPoint == null) continue;
+
+            var p = gp.InteractorOffsetPoint.position;
+            var r = gp.InteractorOffsetPoint.rotation;
+
+            if (gp.hasLast && dt > 0f)
+            {
+                gp.linVel = (p - gp.lastPos) / dt;
+
+                // angular velocity from delta rotation
+                Quaternion dq = r * Quaternion.Inverse(gp.lastRot);
+                dq.ToAngleAxis(out float angleDeg, out Vector3 axis);
+                if (angleDeg > 180f) angleDeg -= 360f;
+
+                if (!float.IsNaN(axis.x) && axis.sqrMagnitude > 0.0001f)
+                    gp.angVel = axis.normalized * (angleDeg * Mathf.Deg2Rad / dt);
+                else
+                    gp.angVel = Vector3.zero;
+            }
+            else
+            {
+                gp.linVel = Vector3.zero;
+                gp.angVel = Vector3.zero;
+                gp.hasLast = true;
+            }
+
+            gp.lastPos = p;
+            gp.lastRot = r;
+        }
+    }
+
+    void HandleGrabbedJoints()
+    {
         // 1) Build a single target from all grabbing hands (average)
         Vector3 targetPos = Vector3.zero;
         Quaternion targetRot = Quaternion.identity;
@@ -104,6 +153,7 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         }
     }
 
+
     public void Init(GrabbableRagdoll ragdoll, RagdollChainBone chainBone)
     {
         _ragdoll = ragdoll;
@@ -137,7 +187,9 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
             return;
 
         if (useUnpinnedWhileGrabbed)
+        {
             ApplyUnpinned();
+        }
 
         AttachHandToBone(hand, out Vector3 attachPos);
         SetupGrabPoint(args.interactorObject, attachPos);
@@ -150,11 +202,21 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         base.OnSelectExited(args);
         Debug.Log($"{nameof(OnSelectExited)}  {Rigidbody.name}", gameObject);
 
+        Vector3 relLinVel = Vector3.zero;
+        Vector3 relAngVel = Vector3.zero;
+
+        if (_grabPoints.TryGetValue(args.interactorObject, out var gp) && gp != null)
+        {
+            relLinVel = gp.linVel;
+            relAngVel = gp.angVel;
+        }
+        
         DestroyGrabPoint(args.interactorObject);
 
         if (!IsSelected)
         {
             _ragdoll.ReleaseThisBodypart(this);
+            _ragdoll.ThrowRagdoll(relLinVel, relAngVel);
             ApplyPinned();
         }
 

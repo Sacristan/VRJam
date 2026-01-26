@@ -2093,9 +2093,21 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: throwExtraUp
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: characterRenderer
       value: 
       objectReference: {fileID: 20978583}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: throwVelocityMultiplier
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: throwAngularVelocityMultiplier
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 6012904333612464279, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: m_Name
       value: AvatarTest

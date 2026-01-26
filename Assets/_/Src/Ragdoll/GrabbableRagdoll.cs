@@ -17,7 +17,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 {
     [SerializeField] private GrabbableRagdollConfig _config;
     public GrabbableRagdollConfig Config => _config;
-    
+
     private const float LOD_RAGDOLL_FADE_SPEED = 1f;
     private const float LOD_MAX_DIST_TO_CAM = 6f;
 
@@ -86,6 +86,11 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     private bool _forceActiveRagdoll = false;
 
+    [SerializeField] private float throwUngroundedTime = 0.75f;
+    [SerializeField] private float throwVelocityMultiplier = 1.0f;
+    [SerializeField] private float throwAngularVelocityMultiplier = 1.0f;
+    [SerializeField] private float throwExtraUp = 0.0f;
+
     public RagdollAnimator2 RagdollAnimator => _ragdoll;
     public GrabbableRagdollBones Bones => _bones;
     public bool IsInStandingMode => _ragdoll.Handler.IsInStandingMode;
@@ -149,14 +154,27 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
             Init(_ragdoll.Handler.BaseTransform);
         }
     }
-    
+
     public float PinnedMultiplier => _grabbedBodyparts.Count > 0 ? 0.5f : 1f;
+
+    public enum ThrowMode
+    {
+        OverrideVelocities, // your current behavior (sets rb.linearVelocity / angularVelocity)
+        AddVelocities, // (2) adds to existing velocities
+        AddImpulse, // (3) AddForce impulse (mass-based)
+        AddVelocityChange // (3) AddForce VelocityChange (mass-independent)
+    }
+
+    [SerializeField] private ThrowMode throwMode = ThrowMode.AddVelocities;
+
+    [SerializeField] private float maxBoneLinearSpeed = 0f; // 0 = no clamp
+    [SerializeField] private float maxBoneAngularSpeed = 0f; // 0 = no clamp
 
     public void Init(Transform baseTransform)
     {
         if (_isInitialized) return;
         _isInitialized = true;
-        
+
         RagdollAnimator2 ragdoll = _ragdoll;
         ragdoll.Handler.BaseTransform = baseTransform;
         if (!ragdoll.Handler.WasInitialized)
@@ -177,7 +195,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
                 foreach (RagdollChainBone boneSetup in chain.BoneSetups)
                 {
                     Rigidbody body = boneSetup.GameRigidbody;
-                    
+
                     boneSetup.ForceLimitsAllTheTime = true;
 
                     var xrRagdollGrab =
@@ -207,8 +225,6 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         _hasStarted = true;
     }
 
-    
-    
     public void OnGrabbed(GrabbableRagdollBodypart ragdollBodypart)
     {
         _grabbedBodyparts.Add(ragdollBodypart);
@@ -216,12 +232,11 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     public void OnReleased(GrabbableRagdollBodypart ragdollBodypart)
     {
-        _grabbedBodyparts.Remove(ragdollBodypart);
     }
-    
+
     public void ReleaseThisBodypart(GrabbableRagdollBodypart ragdollBodypart)
     {
-        // _grabbedBodyparts.Remove(ragdollBodypart);
+        _grabbedBodyparts.Remove(ragdollBodypart);
     }
 
     private void LateUpdate()
@@ -231,21 +246,11 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
         bool isInStandingMode = IsInStandingMode;
 
-        // Make dragged character loose balance if they have been dragged for substantial distance.
-        // if (isInStandingMode && _grabbed is not null)
-        // {
-        //     float magnetDistSq = EvalMagnetPointAttachDistSq(attachMagnetPoint);
-        //     // float magnetDistSq = interactable.EvalMagnetDistanceSq();
-        //     float minDistToFallSq = minDragDistanceToFall * minDragDistanceToFall;
-        //     if (magnetDistSq > minDistToFallSq)
-        //     {
-        //         if (canFall)
-        //         {
-        //             SetRagdollFalling();
-        //             onGrabFalling?.Invoke();
-        //         }
-        //     }
-        // }
+        if (isInStandingMode && IsBeingGrabbed)
+        {
+            SetRagdollFalling();
+            onGrabFalling?.Invoke();
+        }
 
         if (!isInStandingMode && allowAutoGetUp)
         {
@@ -265,6 +270,78 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
                 _ragdollLod.TurnOnTick(lodChangeValue);
             else
                 _ragdollLod.TurnOffTick(lodChangeValue);
+        }
+    }
+
+    private Coroutine _throwRoutine;
+
+    public void ThrowRagdoll(Vector3 linearVel, Vector3 angularVel)
+    {
+        Debug.Log($"ThrowRagdoll mode={throwMode} lin={linearVel} ang={angularVel}", this);
+
+        // Make sure it becomes a full ragdoll right now
+        SetRagdollFalling();
+        ForceActiveRagdoll(resetTimer: throwUngroundedTime);
+
+        // Temporarily prevent get-up while flying
+        if (_throwRoutine != null) StopCoroutine(_throwRoutine);
+        _throwRoutine = StartCoroutine(ThrowCooldown());
+
+        // Apply multipliers
+        linearVel *= throwVelocityMultiplier;
+        angularVel *= throwAngularVelocityMultiplier;
+
+        if (throwExtraUp != 0f) linearVel += Vector3.up * throwExtraUp;
+
+        // Apply to all bones
+        var handler = _ragdoll.Handler;
+        handler.CallOnAllRagdollBones(b =>
+        {
+            var rb = b.GameRigidbody;
+            if (rb == null || rb.isKinematic) return;
+
+            switch (throwMode)
+            {
+                // 1) your current behavior
+                case ThrowMode.OverrideVelocities:
+                    rb.linearVelocity = linearVel;
+                    rb.angularVelocity = angularVel;
+                    break;
+
+                // (2) add to existing velocities (keeps any momentum from dragging)
+                case ThrowMode.AddVelocities:
+                    rb.linearVelocity += linearVel;
+                    rb.angularVelocity += angularVel;
+                    break;
+
+                // (3) force-based: mass-based impulse (feels “heavier” on heavier bones)
+                case ThrowMode.AddImpulse:
+                    rb.AddForce(linearVel * rb.mass, ForceMode.Impulse); // approximate: impulse = m * dv
+                    rb.AddTorque(angularVel * rb.mass, ForceMode.Impulse);
+                    break;
+
+                // (3) force-based: mass-independent "velocity change" (consistent throw across bones)
+                case ThrowMode.AddVelocityChange:
+                    rb.AddForce(linearVel, ForceMode.VelocityChange);
+                    rb.AddTorque(angularVel, ForceMode.VelocityChange);
+                    break;
+            }
+
+            // Optional clamps
+            if (maxBoneLinearSpeed > 0f)
+                rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxBoneLinearSpeed);
+
+            if (maxBoneAngularSpeed > 0f)
+                rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, maxBoneAngularSpeed);
+        });
+
+        IEnumerator ThrowCooldown()
+        {
+            bool prev = allowAutoGetUp;
+            allowAutoGetUp = false;
+            yield return new WaitForSeconds(throwUngroundedTime);
+            allowAutoGetUp = prev;
+            _throwRoutine = null;
         }
     }
 
@@ -377,23 +454,25 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         if (!IsInStandingMode)
             return;
 
-        //TODO: AC:
-        // When ragdoll physics is disabled (e.g. due to LOD optimizations), we need to instantly put it into enabled state.
-        // The code below tries to achieve that, however it still has a few related bugs (need more research):
-        //  - Noticeable animation jerk when character transit from standing -> falling.
-        //  - Applying physical force to ragdoll bones has no effect.
-        //    A smooth state blending down deep in the RagdollAnimator might be the reason. 
-        bool isRagdollFullyEnabled = Mathf.Approximately(1f, _ragdoll.Handler.GetTotalBlend());
-        if (!isRagdollFullyEnabled)
-        {
-            // Make sure to instantly match all bones to animation before ragdoll activation.
-            _ragdollLod.TurnOnTick(1f);
-            SyncRagdollWithAnimation(_ragdoll.Handler);
-        }
-
         _ragdoll.User_SwitchFallState(standing: false);
-        _lastFallTime = Time.time;
-        _lyingStableDuration = 0f;
+        
+        // //TODO: AC:
+        // // When ragdoll physics is disabled (e.g. due to LOD optimizations), we need to instantly put it into enabled state.
+        // // The code below tries to achieve that, however it still has a few related bugs (need more research):
+        // //  - Noticeable animation jerk when character transit from standing -> falling.
+        // //  - Applying physical force to ragdoll bones has no effect.
+        // //    A smooth state blending down deep in the RagdollAnimator might be the reason. 
+        // bool isRagdollFullyEnabled = Mathf.Approximately(1f, _ragdoll.Handler.GetTotalBlend());
+        // if (!isRagdollFullyEnabled)
+        // {
+        //     // Make sure to instantly match all bones to animation before ragdoll activation.
+        //     _ragdollLod.TurnOnTick(1f);
+        //     SyncRagdollWithAnimation(_ragdoll.Handler);
+        // }
+        //
+        // _ragdoll.User_SwitchFallState(standing: false);
+        // _lastFallTime = Time.time;
+        // _lyingStableDuration = 0f;
 
         onRagdollFalling?.Invoke();
     }
@@ -542,62 +621,4 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         Debug.LogWarning("Unexpected collider type. Fallback to universal radius computation method.", collider);
         return collider.bounds.size.MaxComponent() * 0.5f;
     }
-    
-
-    // #region Custom grabbers
-    //
-    // public ICustomRagdollGrabber CustomGrabber => _customGrabber;
-    //
-    // public void SetManipulatedByCustomGrabber([CanBeNull] ICustomRagdollGrabber grabber)
-    // {
-    //     if (ReferenceEquals(_customGrabber, grabber))
-    //         return;
-    //
-    //     bool wasGrabbed = false;
-    //     bool wasGrabAdded = false;
-    //
-    //     // Cancel previous custom grabber (if any).
-    //     if (_customGrabber is not null)
-    //     {
-    //         _customGrabber.ForceRelease(this);
-    //         _customGrabber = null;
-    //         wasGrabbed = true;
-    //     }
-    //
-    //     if (grabber is not null)
-    //     {
-    //         _customGrabber = grabber;
-    //         wasGrabAdded = true;
-    //
-    //         // Make sure to cancel XR selection. 
-    //         if (_grabbed is not null)
-    //         {
-    //             _grabbed.interactionManager.CancelInteractableSelection(
-    //                 (IXRSelectInteractable)_grabbed);
-    //             _grabbed = null;
-    //             wasGrabbed = true;
-    //         }
-    //     }
-    //
-    //     // Recognize grab enter/exit events.
-    //     if (!wasGrabbed && wasGrabAdded)
-    //     {
-    //         _lastGrabEnterTime = Time.time;
-    //         onGrabBegin?.Invoke();
-    //     }
-    //     else if (wasGrabbed && !wasGrabAdded)
-    //     {
-    //         _lastGrabExitTime = Time.time;
-    //         onGrabEnd?.Invoke();
-    //     }
-    // }
-    //
-    // // For now simply a marker interface that denotes anything that implements its own way of grabbing the ragdoll.
-    // public interface ICustomRagdollGrabber
-    // {
-    //     void ForceRelease(GrabbableRagdoll ragdoll);
-    // }
-    //
-    // #endregion
-  
 }
