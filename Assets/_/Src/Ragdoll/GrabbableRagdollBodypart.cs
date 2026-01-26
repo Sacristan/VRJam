@@ -210,7 +210,12 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
             relLinVel = gp.linVel;
             relAngVel = gp.angVel;
         }
-        
+
+        if (!XRPlayer.Instance.Hands.FindHandWithInteractor(args.interactorObject, out XRPlayerHand hand))
+        {
+            relLinVel = hand.VelocityTracker.GetVelocity();
+        }
+
         DestroyGrabPoint(args.interactorObject);
 
         if (!IsSelected)

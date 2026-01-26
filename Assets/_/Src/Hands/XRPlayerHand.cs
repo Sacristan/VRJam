@@ -14,7 +14,7 @@ public class XRPlayerHand : MonoBehaviour
     [SerializeField] private FingersController fingersController;
     [SerializeField] private HandGraphics graphics;
     [SerializeField] private HandInputs inputs;
-    // [SerializeField] private ControllerVelocityTracker velocityTracker;
+    [SerializeField] private ControllerVelocityTracker velocityTracker;
     // [SerializeField] private UniversalControllerTooltip controllerTooltip;
     //Default Value 0.5 based on BNG.HandCollision.cs:90 value, which feels ok in most cases.
     [Tooltip("Delay after deselect any intractable")]
@@ -32,7 +32,7 @@ public class XRPlayerHand : MonoBehaviour
     public FingersController FingersController => fingersController;
     public HandGraphics HandGraphics => graphics;
     public HandInputs HandInputs => inputs;
-    // public ControllerVelocityTracker VelocityTracker => velocityTracker;
+    public ControllerVelocityTracker VelocityTracker => velocityTracker;
     // public UniversalControllerTooltip ControllerTooltip => controllerTooltip;
     public IXRSelectInteractable JustReleasedInteractable => _justReleasedInteractable;
 
