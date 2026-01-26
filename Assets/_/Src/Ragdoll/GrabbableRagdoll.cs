@@ -454,25 +454,17 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         if (!IsInStandingMode)
             return;
 
-        _ragdoll.User_SwitchFallState(standing: false);
+        bool isRagdollFullyEnabled = Mathf.Approximately(1f, _ragdoll.Handler.GetTotalBlend());
+        if (!isRagdollFullyEnabled)
+        {
+            // Make sure to instantly match all bones to animation before ragdoll activation.
+            _ragdollLod.TurnOnTick(1f);
+            SyncRagdollWithAnimation(_ragdoll.Handler);
+        }
         
-        // //TODO: AC:
-        // // When ragdoll physics is disabled (e.g. due to LOD optimizations), we need to instantly put it into enabled state.
-        // // The code below tries to achieve that, however it still has a few related bugs (need more research):
-        // //  - Noticeable animation jerk when character transit from standing -> falling.
-        // //  - Applying physical force to ragdoll bones has no effect.
-        // //    A smooth state blending down deep in the RagdollAnimator might be the reason. 
-        // bool isRagdollFullyEnabled = Mathf.Approximately(1f, _ragdoll.Handler.GetTotalBlend());
-        // if (!isRagdollFullyEnabled)
-        // {
-        //     // Make sure to instantly match all bones to animation before ragdoll activation.
-        //     _ragdollLod.TurnOnTick(1f);
-        //     SyncRagdollWithAnimation(_ragdoll.Handler);
-        // }
-        //
-        // _ragdoll.User_SwitchFallState(standing: false);
-        // _lastFallTime = Time.time;
-        // _lyingStableDuration = 0f;
+        _ragdoll.User_SwitchFallState(standing: false);
+        _lastFallTime = Time.time;
+        _lyingStableDuration = 0f;
 
         onRagdollFalling?.Invoke();
     }
