@@ -275,9 +275,9 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     private Coroutine _throwRoutine;
 
-    public void ThrowRagdoll(Vector3 linearVel, Vector3 angularVel)
+    public void ThrowRagdoll(Vector3 linearVel)
     {
-        Debug.Log($"ThrowRagdoll mode={throwMode} lin={linearVel} ang={angularVel}", this);
+        Debug.Log($"ThrowRagdoll mode={throwMode} lin={linearVel}", this);
 
         // Make sure it becomes a full ragdoll right now
         SetRagdollFalling();
@@ -289,7 +289,6 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
         // Apply multipliers
         linearVel *= throwVelocityMultiplier;
-        angularVel *= throwAngularVelocityMultiplier;
 
         if (throwExtraUp != 0f) linearVel += Vector3.up * throwExtraUp;
 
@@ -305,25 +304,21 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
                 // 1) your current behavior
                 case ThrowMode.OverrideVelocities:
                     rb.linearVelocity = linearVel;
-                    rb.angularVelocity = angularVel;
                     break;
 
                 // (2) add to existing velocities (keeps any momentum from dragging)
                 case ThrowMode.AddVelocities:
                     rb.linearVelocity += linearVel;
-                    rb.angularVelocity += angularVel;
                     break;
 
                 // (3) force-based: mass-based impulse (feels “heavier” on heavier bones)
                 case ThrowMode.AddImpulse:
                     rb.AddForce(linearVel * rb.mass, ForceMode.Impulse); // approximate: impulse = m * dv
-                    rb.AddTorque(angularVel * rb.mass, ForceMode.Impulse);
                     break;
 
                 // (3) force-based: mass-independent "velocity change" (consistent throw across bones)
                 case ThrowMode.AddVelocityChange:
                     rb.AddForce(linearVel, ForceMode.VelocityChange);
-                    rb.AddTorque(angularVel, ForceMode.VelocityChange);
                     break;
             }
 
@@ -461,7 +456,7 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
             _ragdollLod.TurnOnTick(1f);
             SyncRagdollWithAnimation(_ragdoll.Handler);
         }
-        
+
         _ragdoll.User_SwitchFallState(standing: false);
         _lastFallTime = Time.time;
         _lyingStableDuration = 0f;

@@ -2098,8 +2098,12 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: throwMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: throwExtraUp
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: characterRenderer
@@ -18218,6 +18222,10 @@ PrefabInstance:
       propertyPath: m_PhysicsLayerMask.m_Bits
       value: 268435457
       objectReference: {fileID: 0}
+    - target: {fileID: 1704085185185596834, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: velocityTracker
+      value: 
+      objectReference: {fileID: 489999179}
     - target: {fileID: 2088407812589341702, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
       propertyPath: poseController
       value: 
@@ -18338,6 +18346,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -90
       objectReference: {fileID: 0}
+    - target: {fileID: 4892957319579679920, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
+      propertyPath: velocityTracker
+      value: 
+      objectReference: {fileID: 1097188746}
     - target: {fileID: 5123212618197942780, guid: a799e4d56035ef948b0ad56eb90ad886, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 10
