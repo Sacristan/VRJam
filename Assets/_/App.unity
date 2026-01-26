@@ -2118,7 +2118,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._EditorMotionCategory
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._Editor_ChainCategory
