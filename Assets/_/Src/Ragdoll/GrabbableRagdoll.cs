@@ -149,6 +149,8 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
             Init(_ragdoll.Handler.BaseTransform);
         }
     }
+    
+    public float PinnedMultiplier => _grabbedBodyparts.Count > 0 ? 0.5f : 1f;
 
     public void Init(Transform baseTransform)
     {

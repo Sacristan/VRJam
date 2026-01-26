@@ -8,7 +8,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 public class GrabPointData
 {
     public readonly Transform RigidbodyPoint;
-    public Transform InteractorOffsetPoint;
+    public readonly Transform InteractorOffsetPoint;
 
     public GrabPointData(Transform rigidbodyPoint, Transform interactorOffsetPoint)
     {
@@ -26,64 +26,32 @@ public class GrabPointData
 public class GrabbableRagdollBodypart : XRBaseInteractable
 {
     [SerializeField] private float detachDist = 1f;
-
     private GrabbableRagdoll _ragdoll;
     private RA2BoneCollisionHandler _ragdollBone;
 
     public GrabbableRagdoll Ragdoll => _ragdoll;
-    public RA2BoneCollisionHandler RagdollBone => _ragdollBone;
     public RagdollChainBone ChainBone { get; private set; }
-    public bool Selected => isSelected;
-    public ERagdollBoneID BoneID => ChainBone.BoneID;
-
+    private bool IsSelected => isSelected;
     private Rigidbody Rigidbody => ChainBone.GameRigidbody;
-
-    // Track per interactor
     private readonly Dictionary<IXRSelectInteractor, GrabPointData> _grabPoints = new();
 
-    // -----------------------------
-    // Joint presets (Pinned/Unpinned)
-    // -----------------------------
-    [System.Serializable]
-    public struct JointPreset
-    {
-        public float spring;
-        public float damper;
-        public float maxForce;
-
-        public JointPreset(float spring, float damper, float maxForce)
-        {
-            this.spring = spring;
-            this.damper = damper;
-            this.maxForce = maxForce;
-        }
-    }
-
-    [Header("Joint drive presets (existing ConfigurableJoint)")]
-    [SerializeField] private JointPreset pinnedPreset   = new JointPreset(1000f, 0f, 1000f);
-    [SerializeField] private JointPreset unpinnedPreset = new JointPreset(25f,   0f, 25f);
-
     [Tooltip("If true, we set Unpinned preset while at least one hand holds this bodypart.")]
-    [SerializeField] private bool useUnpinnedWhileGrabbed = true;
+    private bool useUnpinnedWhileGrabbed = true;
 
-    // -----------------------------
-    // Optional force-based grab assist
-    // -----------------------------
-    [Header("Grab assist (optional PD force, uses Rigidbody)")]
-    [SerializeField] private bool useGrabAssistForces = true;
+    private GrabbableRagdollConfig.JointPreset pinnedPreset = new(1000f, 20f, 1000f);
+    private GrabbableRagdollConfig.JointPreset unpinnedPreset = new(25f, 200f, 25f);
 
-    [SerializeField] private float grabPosSpring = 35f;
-    [SerializeField] private float grabPosDamper = 10f;
-    [SerializeField] private float grabRotSpring = 25f;
-    [SerializeField] private float grabRotDamper = 3f;
-    [SerializeField] private float maxVelChange = 10f;    // clamp per FixedUpdate
-    [SerializeField] private float maxAngVelChange = 8f;  // clamp per FixedUpdate
+    private float grabPosSpring = 35f;
+    private float grabPosDamper = 10f;
+    private float grabRotSpring = 25f;
+    private float grabRotDamper = 3f;
+    private float maxVelChange = 10f;
+    private float maxAngVelChange = 8f;
 
     private void FixedUpdate()
     {
-        if (!useGrabAssistForces) return;
         if (_grabPoints.Count == 0) return;
-        
+
         if (Rigidbody == null || Rigidbody.isKinematic) return;
 
         // 1) Build a single target from all grabbing hands (average)
@@ -142,7 +110,6 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         ChainBone = chainBone;
 
         // ApplyConfigValues(ragdoll.Config.GetConfigForBone(BoneID));
-
         colliders.Clear();
         foreach (var t in chainBone.Colliders)
             colliders.Add(t.GameCollider);
@@ -157,22 +124,20 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
                 $"Cannot find a {nameof(RA2BoneCollisionHandler)} component for ragdoll dummy bone: {name}", this);
         }
 
-        // Default state = pinned (your zombie pinned preset)
-        ApplyJointPreset(pinnedPreset);
+        ApplyPinned();
     }
 
     protected override void OnSelectEntered(SelectEnterEventArgs args)
     {
         base.OnSelectEntered(args);
 
-        Debug.Log($"{nameof(OnSelectEntered)}", gameObject);
+        Debug.Log($"{nameof(OnSelectEntered)} {Rigidbody.name}", gameObject);
 
         if (!XRPlayer.Instance.Hands.FindHandWithInteractor(args.interactorObject, out XRPlayerHand hand))
             return;
 
-        // Switch to unpinned as soon as at least one hand grabs
         if (useUnpinnedWhileGrabbed)
-            ApplyJointPreset(unpinnedPreset);
+            ApplyUnpinned();
 
         AttachHandToBone(hand, out Vector3 attachPos);
         SetupGrabPoint(args.interactorObject, attachPos);
@@ -183,20 +148,14 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
     protected override void OnSelectExited(SelectExitEventArgs args)
     {
         base.OnSelectExited(args);
-        Debug.Log($"{nameof(OnSelectExited)}", gameObject);
+        Debug.Log($"{nameof(OnSelectExited)}  {Rigidbody.name}", gameObject);
 
         DestroyGrabPoint(args.interactorObject);
 
-        // Only repin when LAST interactor releases (multi-hand safe)
-        if (_grabPoints.Count == 0)
-        {
-            if (useUnpinnedWhileGrabbed)
-                ApplyJointPreset(pinnedPreset);
-        }
-
-        if (!Selected) // can still be selected with 2nd hand
+        if (!IsSelected)
         {
             _ragdoll.ReleaseThisBodypart(this);
+            ApplyPinned();
         }
 
         ForceDrop((XRBaseInteractor)args.interactorObject);
@@ -261,18 +220,25 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         return closestPoint;
     }
 
-    // -------------------------------------------------------
-    // Joint drive swapping (this is the "Pinned/Unpinned" core)
-    // -------------------------------------------------------
-    private void ApplyJointPreset(JointPreset preset)
+    void ApplyPinned()
+    {
+        ApplyJointPreset(pinnedPreset, Ragdoll.PinnedMultiplier);
+    }
+
+    void ApplyUnpinned()
+    {
+        ApplyJointPreset(unpinnedPreset);
+    }
+
+    private void ApplyJointPreset(GrabbableRagdollConfig.JointPreset preset, float multiplier = 1f)
     {
         var j = ChainBone?.Joint;
         if (j == null) return;
 
         JointDrive d = j.slerpDrive;
-        d.positionSpring = preset.spring;
+        d.positionSpring = preset.spring * multiplier;
         d.positionDamper = preset.damper;
-        d.maximumForce = preset.maxForce;
+        d.maximumForce = preset.maxForce * multiplier;
         j.slerpDrive = d;
     }
 
