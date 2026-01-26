@@ -2087,7 +2087,7 @@ PrefabInstance:
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: _config
       value: 
-      objectReference: {fileID: 11400000, guid: 15353b89e1ec872449df95d53cb0b398, type: 2}
+      objectReference: {fileID: 11400000, guid: 3136174838e79e444b97db361ac45a62, type: 2}
     - target: {fileID: 5912642624410560157, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: canFall
       value: 1
@@ -2105,12 +2105,20 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9100000, guid: e3a163676711fd242a00688fd44d1de9, type: 2}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: handler.DampingValue
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
+      propertyPath: handler.SpringsValue
+      value: 1000
+      objectReference: {fileID: 0}
+    - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._EditorCategory
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._EditorMotionCategory
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8465927149901962634, guid: 1cbeffe7f3fbef549a52dc0cbf9a4075, type: 3}
       propertyPath: handler._Editor_ChainCategory

@@ -11,43 +11,37 @@ public class GrabbableRagdollConfig : ScriptableObject
     {
         public GrabbableRagdollBoneConfig()
         {
-            
         }
-        
+
         public GrabbableRagdollBoneConfig(ERagdollBoneID boneID)
         {
             this.boneId = boneID;
         }
-        
+
         [SerializeField] public ERagdollBoneID boneId = ERagdollBoneID.Unknown;
 
-        [Header("DRAG POWER")]
-        [SerializeField] public bool overrideDragPower;
-        [SerializeField] 
-        public float dragPower = 1f;
+        [Header("DRAG POWER")] [SerializeField]
+        public bool overrideDragPower;
 
-        [Header("DRIVE SPRING")]
-        [SerializeField] public bool overrideSpring;
+        [SerializeField] public float dragPower = 1f;
 
-        [SerializeField] 
-        public float driveSpring = 1000f;
+        [Header("DRIVE SPRING")] [SerializeField]
+        public bool overrideSpring;
 
-        [SerializeField]
-        public float driveDamper = 0f;
+        [SerializeField] public float driveSpring = 1000f;
+        [SerializeField] public float driveDamper = 100f;
 
-        [Header("STABILIZATION")]
-        [SerializeField] public bool allowStabilization;
+        [Header("STABILIZATION")] [SerializeField]
+        public bool allowStabilization;
 
-        [SerializeField]
-        public float stabilizationDriveSpring = 200;
+        [SerializeField] public float stabilizationDriveSpring = 200;
 
-        [SerializeField]
-        public float stabilizationDriveDamper = 200;
+        [SerializeField] public float stabilizationDriveDamper = 200;
 
         public static GrabbableRagdollBoneConfig Default = new();
         public bool IsDefault => boneId == ERagdollBoneID.Unknown;
     }
-    
+
     [Header("Grabbing")] [SerializeField] public HandPose grabHandPose;
     [SerializeField] public bool allowFallOnGrab = true;
     [SerializeField] public float grabFallDist = 0.3f;
@@ -59,7 +53,7 @@ public class GrabbableRagdollConfig : ScriptableObject
     [SerializeField] public float collisionIgnoreAfterGetUp = 1.5f;
     [SerializeField] public float collisionImpulseMultiplier = 3f;
 
-    [Space] [SerializeField] public GrabbableRagdollBoneConfig[] boneConfigs = new []
+    [Space] [SerializeField] public GrabbableRagdollBoneConfig[] boneConfigs = new[]
     {
         new GrabbableRagdollBoneConfig(ERagdollBoneID.Head),
         new GrabbableRagdollBoneConfig(ERagdollBoneID.Chest),
