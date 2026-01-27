@@ -204,11 +204,11 @@ public class GrabbableRagdollBodypart : XRBaseInteractable
         {
             _ragdoll.ReleaseThisBodypart(this);
 
-            // if (XRPlayer.Instance.Hands.FindHandWithInteractor(args.interactorObject, out XRPlayerHand hand))
-            // {
-            //     Vector3 vel = hand.VelocityTracker.GetAveragedVelocity();
-            //     _ragdoll.ThrowRagdoll(vel);
-            // }
+            if (XRPlayer.Instance.Hands.FindHandWithInteractor(args.interactorObject, out XRPlayerHand hand))
+            {
+                Vector3 vel = hand.VelocityTracker.GetAveragedVelocity();
+                _ragdoll.ThrowRagdoll(vel);
+            }
 
             ApplyPinned();
         }
