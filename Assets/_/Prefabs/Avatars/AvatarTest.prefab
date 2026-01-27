@@ -69,20 +69,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4711208715938537054, guid: b43618aedd7473a4eb1aaa5e80012a1d, type: 3}
     - target: {fileID: 6234913458126536414, guid: 15e24de683f2283418cf0885e386a24e, type: 3}
-      propertyPath: handler._EditorCategory
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6234913458126536414, guid: 15e24de683f2283418cf0885e386a24e, type: 3}
       propertyPath: handler.RagdollDummyLayer
       value: 28
       objectReference: {fileID: 0}
     - target: {fileID: 6234913458126536414, guid: 15e24de683f2283418cf0885e386a24e, type: 3}
       propertyPath: handler.chains.Array.size
       value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6234913458126536414, guid: 15e24de683f2283418cf0885e386a24e, type: 3}
-      propertyPath: handler._Editor_SelectedChain
-      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 6234913458126536414, guid: 15e24de683f2283418cf0885e386a24e, type: 3}
       propertyPath: handler.chains.Array.data[0].Detach

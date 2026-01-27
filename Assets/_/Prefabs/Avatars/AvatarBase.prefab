@@ -46,9 +46,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   handler:
-    _Editor_SelectedChain: -1
-    _Editor_ChainCategory: 0
-    _EditorCategory: 1
+    _Editor_SelectedChain: 0
+    _Editor_ChainCategory: 2
+    _EditorCategory: 3
     _EditorMainCategory: 0
     _EditorMotionCategory: 2
     m_hemi: {fileID: 0}
@@ -61,17 +61,624 @@ MonoBehaviour:
       BonePoses: []
       LastBaseTransform: {fileID: 0}
     UseExtraFeatures: 1
-    ExtraFeatures: []
+    ExtraFeatures:
+    - CustomName: 
+      enabled: 1
+      FeatureReference: {fileID: 11400000, guid: bd4f4ae9c48aad041b25530c43f78bdc, type: 2}
+      customStringList: []
+      customObjectList: []
+      customEventsList: []
+      variables:
+      - VariableName: Receiver
+        Tooltip: 
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 4431535555495526143}
+        VariableType: 7
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Ignore Self Limbs:'
+        Tooltip: Not sending collision events when ragdoll dummy bone collides with
+          its own, other bone collider. (for example arm and leg collision)
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Collect Collisions:'
+        Tooltip: Enabling collecting collision states for each limb. It allows to
+          define if limb is currently colliding with something or not.
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+    - CustomName: 
+      enabled: 1
+      FeatureReference: {fileID: 11400000, guid: efbf8b1edcbcb024bb338baab03df526, type: 2}
+      customStringList: []
+      customObjectList: []
+      customEventsList:
+      - m_PersistentCalls:
+          m_Calls: []
+      - m_PersistentCalls:
+          m_Calls: []
+      variables:
+      - VariableName: GetUpLayer
+        Tooltip: 
+        _value: {x: 0, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Springs On Fall:'
+        Tooltip: 
+        _value: {x: 25, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Change Duration:'
+        Tooltip: Springs Value on fall mode transition duration
+        _value: {x: 0.15, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 2, z: 0, w: 0}
+      - VariableName: 'Fall Animation:'
+        Tooltip: Left empty to not use this part of the extra feature
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: Fall
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Fall Crossfade Duration:'
+        Tooltip: 
+        _value: {x: 0.2, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Layer:'
+        Tooltip: Set Layer to play animation state on
+        _value: {x: 0, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Use On Fall Event:'
+        Tooltip: 
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Get Up Crossfade:'
+        Tooltip: 
+        _value: {x: 0.2, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Get Up Face Down:'
+        Tooltip: Get up face down animator state name, to play on character transition
+          to standing mode
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: Get Up Face
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Get Up From Back:'
+        Tooltip: Get up from character's back animator state name, to play on character
+          transition to standing mode
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: Get Up Back
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Reposition Base Transform:'
+        Tooltip: Changing position of Ragdoll Animator's Base Transform to match
+          get up position
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Reposition Mode:'
+        Tooltip: 
+        _value: {x: 1, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Find Character Rigidbody:'
+        Tooltip: Finding and repositioning base transform character movement rigidbody
+          if found
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Support Standing Restore:'
+        Tooltip: Use if you detect character standing on both legs during falling-ragdolled
+          state. (check Auto Get Up Extra Feature)
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Use Get Up Event:'
+        Tooltip: 
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Set Bool Property On Fall:'
+        Tooltip: Changing bool Animator property on fall -> setting it true. When
+          standing up, changing it to false.
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: Ragdolled
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Body Velocity Property:'
+        Tooltip: Assigning ragdoll animator's body velocity value, to animator float
+          property
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: Fall Motion
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'On Restore Animation:'
+        Tooltip: Animation state to be played (on the same layer and crossfade time
+          as get up animations)
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 5
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'On Restore Repose:'
+        Tooltip: 
+        _value: {x: -1, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+    - CustomName: 
+      enabled: 1
+      FeatureReference: {fileID: 11400000, guid: 8496c6fdb1e1a9448b5ebaabdb44db71, type: 2}
+      customStringList: []
+      customObjectList: []
+      customEventsList: []
+      variables:
+      - VariableName: 'Blending Speed:'
+        Tooltip: How quickly physical pose should blend in when collision happens.
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 1, z: 0, w: 0}
+      - VariableName: 'Turn Off Legs:'
+        Tooltip: "Making legs blend zero on standing mode to make keyframe animation
+          intact. You probably will need to disable collision events send on feet
+          bones if you want to keep legs enabled (under Construct -> Physics -> \u2261
+          -> Extra Settings)"
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Sensitive Blend:'
+        Tooltip: When collision happens, applying blending also on the first parent
+          bones of the chain (like arm collision -> blend upper chest too)
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Skip Feet:'
+        Tooltip: 'Skipping checking last leg bones collision state to avoid blending
+          legs every time feet are touching ground.
+
+
+          With legs turned
+          off, this option will disable blending in feet bones on leg blend request.'
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Ignore Self Collision Blend:'
+        Tooltip: Ignoring self dummy colliders for collision detectors.
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+    - CustomName: 
+      enabled: 0
+      FeatureReference: {fileID: 11400000, guid: bc0b2dc1b6b44ec4fb5b7fd43331c140, type: 2}
+      customStringList: []
+      customObjectList: []
+      customEventsList: []
+      variables: []
+    - CustomName: 
+      enabled: 1
+      FeatureReference: {fileID: 11400000, guid: 4bed8664e91fcfd44a2fc1541d4ec539, type: 2}
+      customStringList: []
+      customObjectList: []
+      customEventsList:
+      - m_PersistentCalls:
+          m_Calls: []
+      variables:
+      - VariableName: 'Minimum Delay:'
+        Tooltip: Minimum delay in seconds after falling to trigger get up action
+        _value: {x: 2, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Minimum Stability:'
+        Tooltip: Minimum stable body duration to allow get up
+        _value: {x: 0.25, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Max avg. Translation:'
+        Tooltip: 'If average translation of core chain will surpass this value, get
+          up will not be triggered.
+
+          Higher Value = Get up more frequently
+
+          Lower
+          Value = Get up only when ragdoll calm down'
+        _value: {x: 0.075, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Max avg. Torque:'
+        Tooltip: 'If average angular velocity/torque of core chain will surpass this
+          value, get up will not be triggered.
+
+          Higher Value = Get up more
+          frequently
+
+          Lower Value = Get up only when ragdoll calm down'
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Needs Core Grounded:'
+        Tooltip: 'If set to zero, then this feature is not used.
+
+          Raycasting
+          for ground contact using core chain bones. If all bones lies on the ground
+          for this duration, character will be allowed to get up.
+
+          (Not
+          used for standing restore checks)'
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Ground Mask:'
+        Tooltip: 
+        _value: {x: 1, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'To Standing Transition Duration:'
+        Tooltip: Duration of transition process from falling to standing ragdoll
+        _value: {x: 2, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 2, z: 0, w: 0}
+      - VariableName: 'Quick Blend Fade:'
+        Tooltip: Fade applied to the 'Ragdoll Blend' parameter to make character
+          be animated without any physical effect for Get Up animation.
+        _value: {x: 0.7, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 1, z: 0, w: 0}
+      - VariableName: 'Freeze Source Animator Hips:'
+        Tooltip: Freezing position/rotation of source animation anchor bone, to make
+          crossfade to get up animation seamless (no hovering - caused by falling
+          to get up animation crossfade)
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0.5, z: 0, w: 0}
+      - VariableName: 'Animator Fade Delay:'
+        Tooltip: Adding delay of animator fade, in case of crossfading to get up
+          animation. If you transition immedietely to get up animation, set this
+          value as zero
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Allow Standing Restore:'
+        Tooltip: If character ragdoll falls, but is standing on both legs during
+          ragdolled state for a moment, you can trigger different 'Get Up', restoring
+          character to the standing animating mode without playing 'get up from floor'
+          animations.
+        _value: {x: 0, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 1
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Raycast Range Multiplier:'
+        Tooltip: 
+        _value: {x: 1, y: 0, z: 0, w: 0}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
+      - VariableName: 'Raycast Mode:'
+        Tooltip: 
+        _value: {x: 0, y: 0, z: 0, w: 1}
+        _string: 
+        _curve:
+          serializedVersion: 2
+          m_Curve: []
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        _uObject: {fileID: 0}
+        VariableType: 0
+        _rangeHelper: {x: 0, y: 0, z: 0, w: 0}
     IsHumanoid: 1
     dummyContainer: {fileID: 0}
     inBetweenPreGenerateMemory: []
     skeletonFillExtraBonesList: []
     MusclesPower: 1
-    SpringsValue: 1500
+    SpringsValue: 1000
     SpringsOnFall: 0
-    DampingValue: 40
+    DampingValue: 0
     DampingValueOnFall: 0
-    HardMatching: 0
+    HardMatching: 1
     HardMatchPositions: 0
     HardMatchPositionsOnFall: 0
     PositionHardMatchingMultiplier: 1
@@ -80,7 +687,7 @@ MonoBehaviour:
     AnchorBoneSpring: 1
     MakeAnchorKinematicOnMaxSpring: 0
     UnaffectedMovement: 0
-    AutoUnstuck: 0
+    AutoUnstuck: 1
     LockAnchorRotation: 1
     AnchorJointLimits: 0
     FallOnZeroAnchor: 1
@@ -116,12 +723,12 @@ MonoBehaviour:
     Calibrate: 1
     AnimatePhysics: 0
     ApplyPositions: 0
-    OptimizeOnZeroBlend: 0
+    OptimizeOnZeroBlend: 1
     HideDummyInSceneView: 0
     IgnoreBoundedColliders: 1
     RagdollDummyLayer: 0
     UnscaledTime: 0
-    FadeInAnimation: 0
+    FadeInAnimation: 0.15
     IgnoreSourceSkeletonColliders: 1
     WaitForInit: 1
     AnimationMatchLimits: 1
@@ -143,6 +750,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a81eb55020a3b942aba492a91a984f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _config: {fileID: 11400000, guid: 3136174838e79e444b97db361ac45a62, type: 2}
   characterRenderer: {fileID: 0}
   canBeDragged: 1
   allowFallOnCollision: 0
@@ -155,9 +763,16 @@ MonoBehaviour:
   groundMask:
     serializedVersion: 2
     m_Bits: 1
-  groundCastExtraDist: 0.2
+  groundCastExtraDist: 0.3
   minFallingTime: 0.15
   minLyingStableTime: 0.05
+  throwUngroundedTime: 0.75
+  throwVelocityMultiplier: 1
+  throwAngularVelocityMultiplier: 1
+  throwExtraUp: 0
+  throwMode: 2
+  maxBoneLinearSpeed: 0
+  maxBoneAngularSpeed: 0
 --- !u!1 &8109293532997639107
 GameObject:
   m_ObjectHideFlags: 0

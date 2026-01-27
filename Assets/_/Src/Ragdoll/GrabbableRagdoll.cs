@@ -342,6 +342,8 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
 
     private void TryGetUp()
     {
+        return;
+        
         if (IsBeingGrabbed)
             return;
 
