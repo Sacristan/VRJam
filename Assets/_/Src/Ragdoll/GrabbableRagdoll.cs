@@ -273,72 +273,72 @@ public partial class GrabbableRagdoll : MonoBehaviour, IRagdollAnimator2Receiver
         }
     }
 
-    private Coroutine _throwRoutine;
-
-    public void ThrowRagdoll(Vector3 linearVel)
-    {
-        Debug.Log($"ThrowRagdoll mode={throwMode} lin={linearVel}", this);
-
-        // Make sure it becomes a full ragdoll right now
-        SetRagdollFalling();
-        ForceActiveRagdoll(resetTimer: throwUngroundedTime);
-
-        // Temporarily prevent get-up while flying
-        if (_throwRoutine != null) StopCoroutine(_throwRoutine);
-        _throwRoutine = StartCoroutine(ThrowCooldown());
-
-        // Apply multipliers
-        linearVel *= throwVelocityMultiplier;
-
-        if (throwExtraUp != 0f) linearVel += Vector3.up * throwExtraUp;
-
-        // Apply to all bones
-        var handler = _ragdoll.Handler;
-        handler.CallOnAllRagdollBones(b =>
-        {
-            var rb = b.GameRigidbody;
-            if (rb == null || rb.isKinematic) return;
-
-            switch (throwMode)
-            {
-                // 1) your current behavior
-                case ThrowMode.OverrideVelocities:
-                    rb.linearVelocity = linearVel;
-                    break;
-
-                // (2) add to existing velocities (keeps any momentum from dragging)
-                case ThrowMode.AddVelocities:
-                    rb.linearVelocity += linearVel;
-                    break;
-
-                // (3) force-based: mass-based impulse (feels “heavier” on heavier bones)
-                case ThrowMode.AddImpulse:
-                    rb.AddForce(linearVel * rb.mass, ForceMode.Impulse); // approximate: impulse = m * dv
-                    break;
-
-                // (3) force-based: mass-independent "velocity change" (consistent throw across bones)
-                case ThrowMode.AddVelocityChange:
-                    rb.AddForce(linearVel, ForceMode.VelocityChange);
-                    break;
-            }
-
-            // Optional clamps
-            if (maxBoneLinearSpeed > 0f)
-                rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxBoneLinearSpeed);
-
-            if (maxBoneAngularSpeed > 0f)
-                rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, maxBoneAngularSpeed);
-        });
-
-        IEnumerator ThrowCooldown()
-        {
-            bool prev = allowAutoGetUp;
-            allowAutoGetUp = false;
-            yield return new WaitForSeconds(throwUngroundedTime);
-            allowAutoGetUp = prev;
-            _throwRoutine = null;
-        }
-    }
+    // private Coroutine _throwRoutine;
+    //
+    // public void ThrowRagdoll(Vector3 linearVel)
+    // {
+    //     Debug.Log($"ThrowRagdoll mode={throwMode} lin={linearVel}", this);
+    //
+    //     // Make sure it becomes a full ragdoll right now
+    //     SetRagdollFalling();
+    //     ForceActiveRagdoll(resetTimer: throwUngroundedTime);
+    //
+    //     // Temporarily prevent get-up while flying
+    //     if (_throwRoutine != null) StopCoroutine(_throwRoutine);
+    //     _throwRoutine = StartCoroutine(ThrowCooldown());
+    //
+    //     // Apply multipliers
+    //     linearVel *= throwVelocityMultiplier;
+    //
+    //     if (throwExtraUp != 0f) linearVel += Vector3.up * throwExtraUp;
+    //
+    //     // Apply to all bones
+    //     var handler = _ragdoll.Handler;
+    //     handler.CallOnAllRagdollBones(b =>
+    //     {
+    //         var rb = b.GameRigidbody;
+    //         if (rb == null || rb.isKinematic) return;
+    //
+    //         switch (throwMode)
+    //         {
+    //             // 1) your current behavior
+    //             case ThrowMode.OverrideVelocities:
+    //                 rb.linearVelocity = linearVel;
+    //                 break;
+    //
+    //             // (2) add to existing velocities (keeps any momentum from dragging)
+    //             case ThrowMode.AddVelocities:
+    //                 rb.linearVelocity += linearVel;
+    //                 break;
+    //
+    //             // (3) force-based: mass-based impulse (feels “heavier” on heavier bones)
+    //             case ThrowMode.AddImpulse:
+    //                 rb.AddForce(linearVel * rb.mass, ForceMode.Impulse); // approximate: impulse = m * dv
+    //                 break;
+    //
+    //             // (3) force-based: mass-independent "velocity change" (consistent throw across bones)
+    //             case ThrowMode.AddVelocityChange:
+    //                 rb.AddForce(linearVel, ForceMode.VelocityChange);
+    //                 break;
+    //         }
+    //
+    //         // Optional clamps
+    //         if (maxBoneLinearSpeed > 0f)
+    //             rb.linearVelocity = Vector3.ClampMagnitude(rb.linearVelocity, maxBoneLinearSpeed);
+    //
+    //         if (maxBoneAngularSpeed > 0f)
+    //             rb.angularVelocity = Vector3.ClampMagnitude(rb.angularVelocity, maxBoneAngularSpeed);
+    //     });
+    //
+    //     IEnumerator ThrowCooldown()
+    //     {
+    //         bool prev = allowAutoGetUp;
+    //         allowAutoGetUp = false;
+    //         yield return new WaitForSeconds(throwUngroundedTime);
+    //         allowAutoGetUp = prev;
+    //         _throwRoutine = null;
+    //     }
+    // }
 
     private void TryGetUp()
     {
